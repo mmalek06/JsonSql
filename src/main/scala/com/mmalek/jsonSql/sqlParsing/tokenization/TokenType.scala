@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.sqlParsing.tokens
+package com.mmalek.jsonSql.sqlParsing.tokenization
 
 import enumeratum._
 

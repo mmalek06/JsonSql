@@ -1,20 +1,24 @@
-package com.mmalek.jsonSql.unitTests
+package com.mmalek.jsonSql.sqlParsing.unitTests
 
-import com.mmalek.jsonSql.sqlParsing.tokens.Token._
-import com.mmalek.jsonSql.sqlParsing.tokens.Tokenizer
+import com.mmalek.jsonSql.sqlParsing.tokenization.Token._
+import com.mmalek.jsonSql.sqlParsing.tokenization.Tokenizer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class TokenizerTests extends AnyFlatSpec with Matchers{
   "A Tokenizer" should "parse simple input into tokens" in {
-    val query = "SELECT thing FROM json_file WHERE condition"
+    val query =
+      """
+        SELECT thing
+        FROM {"str_key": "value","int_key": 1}
+        WHERE condition"""
     val result = Tokenizer.tokenize(query).toVector
 
     result.length should be (6)
     result(0) should be (Select)
     result(1) should be (Any("thing"))
     result(2) should be (From)
-    result(3) should be (Any("json_file"))
+    result(3) should be (Json("""{"str_key": "value","int_key": 1}"""))
     result(4) should be (Where)
     result(5) should be (Any("condition"))
   }

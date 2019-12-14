@@ -1,7 +1,7 @@
-package com.mmalek.jsonSql.sqlParsing.tokens
+package com.mmalek.jsonSql.sqlParsing.tokenization
 
 import enumeratum._
-import com.mmalek.jsonSql.sqlParsing.tokens.TokenType._
+import com.mmalek.jsonSql.sqlParsing.tokenization.TokenType._
 
 sealed abstract class Token(`type`: TokenType) extends EnumEntry
 
@@ -21,4 +21,5 @@ object Token extends Enum[Token] {
   case object Where extends Token(Statement)
 
   case class Any(value: String) extends Token(Value)
+  case class Json(value: String) extends Token(Value)
 }

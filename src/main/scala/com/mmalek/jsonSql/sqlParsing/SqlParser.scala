@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql.sqlParsing
 
-import com.mmalek.jsonSql.sqlParsing.tokens.Tokenizer
+import com.mmalek.jsonSql.sqlParsing.tokenization.Tokenizer
 
 
 object SqlParser {
