@@ -5,13 +5,9 @@ import com.mmalek.jsonSql.sqlParsing.tokenization.Tokenizer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class TokenizerTests extends AnyFlatSpec with Matchers{
+class TokenizerTests extends AnyFlatSpec with Matchers {
   "A Tokenizer" should "parse simple input into tokens" in {
-    val query =
-      """
-        SELECT thing
-        FROM {"str_key": "value","int_key": 1}
-        WHERE condition"""
+    val query = """SELECT thing FROM {"str_key": "value","int_key": 1} WHERE condition"""
     val result = Tokenizer.tokenize(query).toVector
 
     result.length should be (6)

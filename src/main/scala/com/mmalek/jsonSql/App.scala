@@ -4,6 +4,12 @@ import com.mmalek.jsonSql.sqlParsing.SqlParser
 
 object App {
   def main(args: Array[String]): Unit = {
-    SqlParser.parse("SELECT a, avg(something_else) FROM jebs")
+    val query =
+      """
+        SELECT thing
+        FROM {"str_key": "value","int_key": 1}
+        WHERE condition"""
+
+    SqlParser.parse(query)
   }
 }
