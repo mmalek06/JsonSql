@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.sqlParsing.extraction
+package com.mmalek.jsonSql.sqlParsing.tokenization
 
 case class JsonExtractor(builder: StringBuilder,
                          openObjects: Int,

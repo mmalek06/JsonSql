@@ -1,6 +1,5 @@
 package com.mmalek.jsonSql.sqlParsing.tokenization
 
-import com.mmalek.jsonSql.sqlParsing.extraction.JsonExtractor
 import com.mmalek.jsonSql.sqlParsing.tokenization.Token._
 
 import scala.collection.immutable.HashSet

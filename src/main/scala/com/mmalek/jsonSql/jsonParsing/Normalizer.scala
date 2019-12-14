@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.jsonParsing.normalization
+package com.mmalek.jsonSql.jsonParsing
 
 object Normalizer {
   private val newLineChar = '\n'
