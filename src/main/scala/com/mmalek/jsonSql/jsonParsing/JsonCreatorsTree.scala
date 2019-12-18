@@ -5,6 +5,8 @@ import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 sealed trait JsonCreatorsTree {
   def addChild(childValue: CreatorArgument => JValue,
                parentPath: Seq[Node] = Nil): Node
+
+  def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node]
 }
 
 object JsonCreatorsTree {
@@ -17,6 +19,12 @@ case class Node(value: CreatorArgument => JValue, children: Seq[Node]) extends J
     case Nil => createTree(childValue)
     case parents => recreateTree(childValue, parents)
   }
+
+  def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] =
+    children match {
+      case Nil => parents
+      case elements => elements.last.getRightmostChildPath(parents :+ this)
+    }
 
   private def createTree(childValue: CreatorArgument => JValue) =
     copy(children = children :+ Node(childValue, Nil))
@@ -40,4 +48,6 @@ case class Zero() extends JsonCreatorsTree {
   def addChild(childValue: CreatorArgument => JValue,
                parentPath: Seq[Node] = Nil): Node =
     Node(childValue, Nil)
+
+  def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] = Nil
 }

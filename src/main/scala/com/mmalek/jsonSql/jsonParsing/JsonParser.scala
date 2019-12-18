@@ -8,26 +8,39 @@ import scala.language.postfixOps
 
 object JsonParser {
   def parse(input: String): JValue = {
-    val seed = ParsingTuple(JsonCreatorsTree.zero, PropertyNameExtractor(new StringBuilder))
+    val seed = ParsingTuple(JsonCreatorsTree.zero, Nil, PropertyNameExtractor(new StringBuilder))
     val result = Normalizer
       .normalize(input)
       .foldLeft(seed)((aggregate, char) => {
         val extractor = aggregate.propertyNameExtractor.next(char)
-        val (maybeFunction, nextExtractor) = getFunctionBy(char, extractor)
+        val (navigation, maybeFunction, nextExtractor) = getFunctionBy(char, extractor)
 
         maybeFunction
-          .map(f => ParsingTuple(aggregate.tree.addChild(f), nextExtractor))
-          .getOrElse(ParsingTuple(aggregate.tree, nextExtractor))
+          .map(createParsingTuple(aggregate, navigation, nextExtractor, _))
+          .getOrElse(aggregate.copy(propertyNameExtractor = nextExtractor))
       })
 
     JNull(0)
   }
 
   private def getFunctionBy(char: Char, nameExtractor: PropertyNameExtractor) =
-    if (char == '{') (Some(getObject), nameExtractor)
-    else if (char == '[') (Some(getArray), nameExtractor)
+    if (char == '{') (Navigation.Down, Some(getObject), nameExtractor)
+    else if (char == '}') (Navigation.Up, None, nameExtractor)
+    else if (char == '[') (Navigation.Down, Some(getArray), nameExtractor)
+    else if (char == ']') (Navigation.Up, None, nameExtractor)
     else if (char == '"') maybeGetField(nameExtractor)
-    else (None, nameExtractor)
+    else (Navigation.Stay, None, nameExtractor)
+
+  private def createParsingTuple(aggregate: ParsingTuple,
+                                 navigation: Navigation,
+                                 nextExtractor: PropertyNameExtractor,
+                                 f: CreatorArgument => JValue) = {
+    val newTree = aggregate.tree.addChild(f)
+    val currentPath = newTree.getRightmostChildPath()
+
+    if (navigation == Navigation.Up) ParsingTuple(newTree, currentPath.init, nextExtractor)
+    else ParsingTuple(newTree, currentPath, nextExtractor)
+  }
 
   private val getObject = (arg: CreatorArgument) =>
     arg.select[Seq[JField]] match {
@@ -45,8 +58,8 @@ object JsonParser {
     if (nameExtractor.isProperty) {
       val newExtractorTuple = nameExtractor.flush
 
-      (Some(getField(newExtractorTuple._1)), newExtractorTuple._2)
-    } else (None, nameExtractor)
+      (Navigation.Stay, Some(getField(newExtractorTuple._1)), newExtractorTuple._2)
+    } else (Navigation.Stay, None, nameExtractor)
 
   private def getField(name: String) = (arg: CreatorArgument) =>
     arg map CreatorArgumentToJValue select match {
@@ -65,5 +78,6 @@ object JsonParser {
   }
 
   private case class ParsingTuple(tree: JsonCreatorsTree,
+                                  currentTreePath: Seq[Node],
                                   propertyNameExtractor: PropertyNameExtractor)
 }
