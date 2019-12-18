@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql.jsonParsing
 
-// inspired by: https://github.com/lift/lift/blob/master/framework/lift-base/lift-json/src/main/scala/net/liftweb/json/JsonAST.scala
+//taken from: https://github.com/lift/lift/blob/master/framework/lift-base/lift-json/src/main/scala/net/liftweb/json/JsonAST.scala
 sealed abstract class JValue {
   type Values
 
@@ -9,53 +9,54 @@ sealed abstract class JValue {
   def children: Seq[JValue] = this match {
     case JObject(l) => l
     case JArray(l) => l
-    case JField(_, v) => List(v)
+    case JField(_, v) => Seq(v)
     case _ => Nil
   }
 }
 
 //noinspection TypeAnnotation
 case object JNothing extends JValue {
-  type Values = None.type
-  def values = None
+  override type Values = None.type
+  override def values = None
 }
 
 //noinspection TypeAnnotation
 case object JNull extends JValue {
-  type Values = Null
-  def values = null
+  override type Values = Null
+  override def values = null
 }
 
 case class JString(s: String) extends JValue {
-  type Values = String
-  def values: String = s
+  override type Values = String
+  override def values: String = s
 }
 
 case class JDouble(num: Double) extends JValue {
-  type Values = Double
-  def values: Values = num
+  override type Values = Double
+  override def values: Values = num
 }
 
 case class JInt(num: BigInt) extends JValue {
-  type Values = BigInt
-  def values: BigInt = num
+  override type Values = BigInt
+  override def values: BigInt = num
 }
 
 case class JBool(value: Boolean) extends JValue {
-  type Values = Boolean
-  def values: Values = value
+  override type Values = Boolean
+  override def values: Values = value
 }
 
+//noinspection TypeAnnotation
 case class JField(name: String, value: JValue) extends JValue {
-  type Values = (String, value.Values)
-  def values = (name, value.values)
+  override type Values = (String, value.Values)
+  override def values = (name, value.values)
   override def apply(i: Int): JValue = value(i)
 }
 
 //noinspection TypeAnnotation
 case class JObject(obj: Seq[JField]) extends JValue {
-  type Values = Map[String, Any]
-  def values = Map() ++ obj.map(_.values : (String, Any))
+  override type Values = Map[String, Any]
+  override def values = Map() ++ obj.map(_.values : (String, Any))
 
   override def equals(that: Any): Boolean = that match {
     case o: JObject => Set(obj.toArray: _*) == Set(o.obj.toArray: _*)
@@ -65,8 +66,8 @@ case class JObject(obj: Seq[JField]) extends JValue {
 
 //noinspection TypeAnnotation
 case class JArray(arr: Seq[JValue]) extends JValue {
-  type Values = Seq[Any]
-  def values = arr.map(_.values)
+  override type Values = Seq[Any]
+  override def values = arr.map(_.values)
   override def apply(i: Int): JValue = arr(i)
 
   override def equals(that: Any): Boolean = that match {
