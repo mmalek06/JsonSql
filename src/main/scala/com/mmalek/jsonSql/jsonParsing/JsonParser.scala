@@ -1,45 +1,63 @@
 package com.mmalek.jsonSql.jsonParsing
 
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
-import com.mmalek.jsonSql.jsonParsing.extractors.PropertyNameExtractor
+import com.mmalek.jsonSql.jsonParsing.extractors.{PropertyNameExtractor, ScalarValueExtractor}
 import shapeless._
 
 import scala.language.postfixOps
 
 object JsonParser {
   def parse(input: String): JValue = {
-    val seed = ParsingTuple(JsonCreatorsTree.zero, Nil, PropertyNameExtractor(new StringBuilder))
-    val result = Normalizer
+    val seed = getSeed
+    val ParsingTuple(tree, _, _, _) = Normalizer
       .normalize(input)
-      .foldLeft(seed)((aggregate, char) => {
-        val extractor = aggregate.propertyNameExtractor.next(char)
-        val (navigation, maybeFunction, nextExtractor) = getFunctionBy(char, extractor)
-
-        maybeFunction
-          .map(createParsingTuple(aggregate, navigation, nextExtractor, _))
-          .getOrElse(aggregate.copy(propertyNameExtractor = nextExtractor))
-      })
+      .foldLeft(seed)((aggregate, char) => buildTree(aggregate, char))
 
     JNull(0)
   }
 
-  private def getFunctionBy(char: Char, nameExtractor: PropertyNameExtractor) =
-    if (char == '{') (Navigation.Down, Some(getObject), nameExtractor)
-    else if (char == '}') (Navigation.Up, None, nameExtractor)
-    else if (char == '[') (Navigation.Down, Some(getArray), nameExtractor)
-    else if (char == ']') (Navigation.Up, None, nameExtractor)
-    else if (char == '"') maybeGetField(nameExtractor)
-    else (Navigation.Stay, None, nameExtractor)
+  private def getSeed =
+    ParsingTuple(
+      JsonCreatorsTree.zero,
+      Nil,
+      new PropertyNameExtractor(new StringBuilder),
+      new ScalarValueExtractor(new StringBuilder))
+
+  private def buildTree(aggregate: ParsingTuple, char: Char) = {
+    val propertyNameExtractor = aggregate.propertyNameExtractor.next(char)
+    val scalarValueExtractor = aggregate.scalarValueExtractor.next(char)
+    val (navigation, maybeFunction, nextPropertyNameExtractor, nextScalarValueExtractor) =
+      getActionTuple(char, propertyNameExtractor, scalarValueExtractor)
+
+    maybeFunction
+      .map(createParsingTuple(aggregate, navigation, nextPropertyNameExtractor, nextScalarValueExtractor, _))
+      .getOrElse(aggregate.copy(propertyNameExtractor = nextPropertyNameExtractor, scalarValueExtractor = nextScalarValueExtractor))
+  }
+
+  private def getActionTuple(char: Char,
+                             nameExtractor: PropertyNameExtractor,
+                             scalarExtractor: ScalarValueExtractor) = {
+    import shapeless.syntax.std.tuple._
+
+    if (char == '{') (Navigation.Down, Some(getObject), nameExtractor, scalarExtractor)
+    else if (char == '}') (Navigation.Up, None, nameExtractor, scalarExtractor)
+    else if (char == '[') (Navigation.Down, Some(getArray), nameExtractor, scalarExtractor)
+    else if (char == ']') (Navigation.Up, None, nameExtractor, scalarExtractor)
+    else if (char == '"' && nameExtractor.isPropertyName) getPropertyName(nameExtractor) :+ scalarExtractor
+    else if (scalarExtractor.isScalarValue) getScalarValue(nameExtractor, scalarExtractor)
+    else (Navigation.Stay, None, nameExtractor, scalarExtractor)
+  }
 
   private def createParsingTuple(aggregate: ParsingTuple,
                                  navigation: Navigation,
-                                 nextExtractor: PropertyNameExtractor,
+                                 propertyNameExtractor: PropertyNameExtractor,
+                                 scalarValueExtractor: ScalarValueExtractor,
                                  f: CreatorArgument => JValue) = {
     val newTree = aggregate.tree.addChild(f)
     val currentPath = newTree.getRightmostChildPath()
 
-    if (navigation == Navigation.Up) ParsingTuple(newTree, currentPath.init, nextExtractor)
-    else ParsingTuple(newTree, currentPath, nextExtractor)
+    if (navigation == Navigation.Up) ParsingTuple(newTree, currentPath.init, propertyNameExtractor, scalarValueExtractor)
+    else ParsingTuple(newTree, currentPath, propertyNameExtractor, scalarValueExtractor)
   }
 
   private val getObject = (arg: CreatorArgument) =>
@@ -54,18 +72,31 @@ object JsonParser {
       case Some(array) => JArray(array)
     }
 
-  private def maybeGetField(nameExtractor: PropertyNameExtractor) =
-    if (nameExtractor.isProperty) {
-      val newExtractorTuple = nameExtractor.flush
+  private def getPropertyName(nameExtractor: PropertyNameExtractor) = {
+    val newExtractorTuple = nameExtractor.flush
+    val getField = (arg: CreatorArgument) =>
+      arg map CreatorArgumentToJValue select match {
+        case None => JNull(0)
+        case Some(value) => JField(newExtractorTuple._1, value)
+      }
 
-      (Navigation.Stay, Some(getField(newExtractorTuple._1)), newExtractorTuple._2)
-    } else (Navigation.Stay, None, nameExtractor)
+    (Navigation.Stay, Option(getField), newExtractorTuple._2)
+  }
 
-  private def getField(name: String) = (arg: CreatorArgument) =>
-    arg map CreatorArgumentToJValue select match {
-      case None => JNull(0)
-      case Some(value) => JField(name, value)
-    }
+  private def getScalarValue(nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    val (scalar, newScalarExtractor) = scalarExtractor.flush
+    val value =
+      if (scalar.forall(_.isDigit)) JInt(BigInt(scalar))
+      else scalar
+        .toDoubleOption
+        .map(d => JDouble(d))
+        .getOrElse(scalar
+          .toBooleanOption
+          .map(b => JBool(b))
+          .getOrElse(if (scalar == "null") JNull(0) else JString(scalar)))
+
+    (Navigation.Stay, Option((_: CreatorArgument) => value), nameExtractor, newScalarExtractor)
+  }
 
   object CreatorArgumentToJValue extends Poly1 {
     implicit val atString: Case.Aux[String, JValue] = at { x: String => JString(x) }
@@ -79,5 +110,6 @@ object JsonParser {
 
   private case class ParsingTuple(tree: JsonCreatorsTree,
                                   currentTreePath: Seq[Node],
-                                  propertyNameExtractor: PropertyNameExtractor)
+                                  propertyNameExtractor: PropertyNameExtractor,
+                                  scalarValueExtractor: ScalarValueExtractor)
 }
