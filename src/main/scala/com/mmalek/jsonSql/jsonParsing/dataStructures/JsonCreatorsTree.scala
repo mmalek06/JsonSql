@@ -1,11 +1,9 @@
-package com.mmalek.jsonSql.jsonParsing
+package com.mmalek.jsonSql.jsonParsing.dataStructures
 
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 
 sealed trait JsonCreatorsTree {
-  def addChild(childValue: CreatorArgument => JValue,
-               parentPath: Seq[Node] = Nil): Node
-
+  def addChild(childValue: CreatorArgument => JValue, parentPath: Seq[Node] = Nil): Node
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node]
 }
 

@@ -13,15 +13,23 @@ class PropertyNameExtractor(builder: StringBuilder) {
     val value = builder.toString
     val firstQuoteIdx = value.indexOf('"')
     val secondQuoteIdx = value.indexOf('"', firstQuoteIdx + 1)
-    val propertyName = value.substring(firstQuoteIdx, secondQuoteIdx)
 
-    (propertyName, new PropertyNameExtractor(new StringBuilder))
+    if (firstQuoteIdx > -1 && secondQuoteIdx > -1) {
+      val propertyName = value.substring(firstQuoteIdx, secondQuoteIdx)
+
+      (propertyName, new PropertyNameExtractor(new StringBuilder))
+    } else ("", new PropertyNameExtractor(new StringBuilder))
   }
 
   private def inPropertyName = {
     val noWhitespaces = builder.toString.replaceAll(" +", "")
-    val firstChar = noWhitespaces.charAt(0)
+    val quotesCount = noWhitespaces.count(c => c == '"')
 
-    firstChar == ',' || firstChar == '{'
+    if (noWhitespaces.length == 0 || quotesCount < 2) false
+    else {
+      val firstChar = noWhitespaces.charAt(0)
+
+      firstChar == ',' || firstChar == '{'
+    }
   }
 }

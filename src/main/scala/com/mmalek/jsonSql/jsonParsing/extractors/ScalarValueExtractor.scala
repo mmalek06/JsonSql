@@ -11,17 +11,27 @@ class ScalarValueExtractor(builder: StringBuilder) {
 
   def flush: (String, ScalarValueExtractor) = {
     val value = builder.toString
-    val firstQuoteIdx = value.indexOf('"')
-    val secondQuoteIdx = value.indexOf('"', firstQuoteIdx + 1)
-    val propertyName = value.substring(firstQuoteIdx, secondQuoteIdx)
+    val colonIdx = value.indexOf(':')
+    val commaIdx = value.lastIndexOf(',')
 
-    (propertyName, new ScalarValueExtractor(new StringBuilder))
+    if (colonIdx > -1 && commaIdx > -1) {
+      val initiallyCleanedValue = value.substring(colonIdx + 1, commaIdx).trim.stripLineEnd
+      val finalValue =
+        if (initiallyCleanedValue(0) == '"') initiallyCleanedValue.substring(1, initiallyCleanedValue.length - 1)
+        else initiallyCleanedValue
+
+      (finalValue, new ScalarValueExtractor(new StringBuilder))
+    } else ("", new ScalarValueExtractor(new StringBuilder))
   }
 
   private def inScalarValue = {
     val noWhitespaces = builder.toString.replaceAll(" +", "")
-    val firstChar = noWhitespaces.charAt(0)
 
-    firstChar == ':'
+    if (noWhitespaces.length == 0) false
+    else {
+      val firstChar = noWhitespaces.charAt(0)
+
+      firstChar == ':' && noWhitespaces.last == ','
+    }
   }
 }

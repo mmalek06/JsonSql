@@ -1,6 +1,7 @@
 package com.mmalek.jsonSql.jsonParsing
 
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
+import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import com.mmalek.jsonSql.jsonParsing.extractors.{PropertyNameExtractor, ScalarValueExtractor}
 import shapeless._
 
@@ -34,19 +35,20 @@ object JsonParser {
       .getOrElse(aggregate.copy(propertyNameExtractor = nextPropertyNameExtractor, scalarValueExtractor = nextScalarValueExtractor))
   }
 
+  private def runTree(tree: JsonCreatorsTree) = {
+
+  }
+
   private def getActionTuple(char: Char,
                              nameExtractor: PropertyNameExtractor,
-                             scalarExtractor: ScalarValueExtractor) = {
-    import shapeless.syntax.std.tuple._
-
+                             scalarExtractor: ScalarValueExtractor) =
     if (char == '{') (Navigation.Down, Some(getObject), nameExtractor, scalarExtractor)
     else if (char == '}') (Navigation.Up, None, nameExtractor, scalarExtractor)
     else if (char == '[') (Navigation.Down, Some(getArray), nameExtractor, scalarExtractor)
     else if (char == ']') (Navigation.Up, None, nameExtractor, scalarExtractor)
-    else if (char == '"' && nameExtractor.isPropertyName) getPropertyName(nameExtractor) :+ scalarExtractor
+    else if (char == '"' && nameExtractor.isPropertyName) getPropertyName(nameExtractor, scalarExtractor)
     else if (scalarExtractor.isScalarValue) getScalarValue(nameExtractor, scalarExtractor)
     else (Navigation.Stay, None, nameExtractor, scalarExtractor)
-  }
 
   private def createParsingTuple(aggregate: ParsingTuple,
                                  navigation: Navigation,
@@ -72,19 +74,21 @@ object JsonParser {
       case Some(array) => JArray(array)
     }
 
-  private def getPropertyName(nameExtractor: PropertyNameExtractor) = {
-    val newExtractorTuple = nameExtractor.flush
+  private def getPropertyName(propertyExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    val (propertyName, newPropertyExtractor) = propertyExtractor.flush
+    val (_, newScalarExtractor) = scalarExtractor.flush
     val getField = (arg: CreatorArgument) =>
       arg map CreatorArgumentToJValue select match {
         case None => JNull(0)
-        case Some(value) => JField(newExtractorTuple._1, value)
+        case Some(value) => JField(propertyName, value)
       }
 
-    (Navigation.Stay, Option(getField), newExtractorTuple._2)
+    (Navigation.Stay, Option(getField), newPropertyExtractor, newScalarExtractor)
   }
 
-  private def getScalarValue(nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+  private def getScalarValue(propertyExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
     val (scalar, newScalarExtractor) = scalarExtractor.flush
+    val (_, newPropertyExtractor) = propertyExtractor.flush
     val value =
       if (scalar.forall(_.isDigit)) JInt(BigInt(scalar))
       else scalar
@@ -95,7 +99,7 @@ object JsonParser {
           .map(b => JBool(b))
           .getOrElse(if (scalar == "null") JNull(0) else JString(scalar)))
 
-    (Navigation.Stay, Option((_: CreatorArgument) => value), nameExtractor, newScalarExtractor)
+    (Navigation.Stay, Option((_: CreatorArgument) => value), newPropertyExtractor, newScalarExtractor)
   }
 
   object CreatorArgumentToJValue extends Poly1 {

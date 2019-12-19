@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.jsonParsing
+package com.mmalek.jsonSql.jsonParsing.dataStructures
 
 //taken from: https://github.com/lift/lift/blob/master/framework/lift-base/lift-json/src/main/scala/net/liftweb/json/JsonAST.scala
 sealed abstract class JValue {
