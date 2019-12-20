@@ -29,40 +29,56 @@ object JsonParser {
     val scalarValueExtractor = aggregate.scalarValueExtractor.next(char)
     val (navigation, maybeFunction, value, nextPropertyNameExtractor, nextScalarValueExtractor) =
       getActionTuple(char, propertyNameExtractor, scalarValueExtractor)
+    val intermediateAggregate = aggregate.copy(
+      propertyNameExtractor = nextPropertyNameExtractor,
+      scalarValueExtractor = nextScalarValueExtractor)
 
-    createParsingTuple(aggregate, navigation, nextPropertyNameExtractor, nextScalarValueExtractor, maybeFunction, value)
+    createParsingTuple(intermediateAggregate, navigation, maybeFunction, value)
   }
 
   private def getActionTuple(char: Char,
                              nameExtractor: PropertyNameExtractor,
                              scalarExtractor: ScalarValueExtractor) =
-    if (char == '{') (Navigation.Down, Some(getObject), "{", nameExtractor, scalarExtractor)
-    else if (char == '[') (Navigation.Down, Some(getArray), "[", nameExtractor, scalarExtractor)
+    if (char == '{') getOpenObject(nameExtractor, scalarExtractor)
+    else if (char == '[') getOpenArray(nameExtractor, scalarExtractor)
     else if (char == '"' && nameExtractor.isPropertyName) getPropertyName(nameExtractor, scalarExtractor)
     else if (scalarExtractor.isScalarValue) getScalarValue(nameExtractor, scalarExtractor)
     else if (char == '}' || char == ']') (Navigation.Up, None, char.toString, nameExtractor, scalarExtractor)
     else (Navigation.Stay, None, "", nameExtractor, scalarExtractor)
 
+  private def getOpenObject(nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    val newNameExtractor = nameExtractor.flushBuilder.next('{')
+    val (_, nextScalarExtractor) = scalarExtractor.flush
+    val newScalarExtractor = nextScalarExtractor.next('{')
+
+    (Navigation.Down, Some(getObject), "{", newNameExtractor, newScalarExtractor)
+  }
+
+  private def getOpenArray(nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    val newNameExtractor = nameExtractor.flushBuilder.next('[')
+    val (_, nextScalarExtractor) = scalarExtractor.flush
+    val newScalarExtractor = nextScalarExtractor.next('[')
+
+    (Navigation.Down, Some(getArray), "[", newNameExtractor, newScalarExtractor)
+  }
+
   private def createParsingTuple(aggregate: ParsingTuple,
                                  navigation: Navigation,
-                                 propertyNameExtractor: PropertyNameExtractor,
-                                 scalarValueExtractor: ScalarValueExtractor,
                                  f: Option[CreatorArgument => JValue],
                                  rawValue: String) = {
     val newTree = f.map(aggregate.tree.addChild(_, rawValue, aggregate.currentTreePath)).getOrElse(aggregate.tree)
     val rightmostPath = newTree.getRightmostChildPath()
-    val oldPath = updatePathObjects(aggregate, rightmostPath)
+    val oldPath = updatePathObjects(aggregate.currentTreePath, rightmostPath)
     val path =
       if (navigation == Navigation.Up) oldPath.init
       else if (navigation == Navigation.Stay) oldPath
       else rightmostPath
 
-    ParsingTuple(newTree, path, propertyNameExtractor, scalarValueExtractor)
+    ParsingTuple(newTree, path, aggregate.propertyNameExtractor, aggregate.scalarValueExtractor)
   }
 
-  private def updatePathObjects(aggregate: ParsingTuple, newObjects: Seq[Node]) =
-    aggregate
-      .currentTreePath
+  private def updatePathObjects(currentTreePath: Seq[Node], newObjects: Seq[Node]) =
+    currentTreePath
       .foldLeft((List.empty[Node], newObjects))((pair, _) => pair match {
         case (newPath, updater) => (newPath :+ updater.head, updater.tail) })
       ._1
