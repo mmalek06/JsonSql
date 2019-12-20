@@ -27,40 +27,45 @@ object JsonParser {
   private def buildTree(aggregate: ParsingTuple, char: Char) = {
     val propertyNameExtractor = aggregate.propertyNameExtractor.next(char)
     val scalarValueExtractor = aggregate.scalarValueExtractor.next(char)
-    val (navigation, maybeFunction, nextPropertyNameExtractor, nextScalarValueExtractor) =
+    val (navigation, maybeFunction, value, nextPropertyNameExtractor, nextScalarValueExtractor) =
       getActionTuple(char, propertyNameExtractor, scalarValueExtractor)
 
-    maybeFunction
-      .map(createParsingTuple(aggregate, navigation, nextPropertyNameExtractor, nextScalarValueExtractor, _))
-      .getOrElse(aggregate.copy(propertyNameExtractor = nextPropertyNameExtractor, scalarValueExtractor = nextScalarValueExtractor))
-  }
-
-  private def runTree(tree: JsonCreatorsTree) = {
-
+    createParsingTuple(aggregate, navigation, nextPropertyNameExtractor, nextScalarValueExtractor, maybeFunction, value)
   }
 
   private def getActionTuple(char: Char,
                              nameExtractor: PropertyNameExtractor,
                              scalarExtractor: ScalarValueExtractor) =
-    if (char == '{') (Navigation.Down, Some(getObject), nameExtractor, scalarExtractor)
-    else if (char == '}') (Navigation.Up, None, nameExtractor, scalarExtractor)
-    else if (char == '[') (Navigation.Down, Some(getArray), nameExtractor, scalarExtractor)
-    else if (char == ']') (Navigation.Up, None, nameExtractor, scalarExtractor)
+    if (char == '{') (Navigation.Down, Some(getObject), "{", nameExtractor, scalarExtractor)
+    else if (char == '[') (Navigation.Down, Some(getArray), "[", nameExtractor, scalarExtractor)
     else if (char == '"' && nameExtractor.isPropertyName) getPropertyName(nameExtractor, scalarExtractor)
     else if (scalarExtractor.isScalarValue) getScalarValue(nameExtractor, scalarExtractor)
-    else (Navigation.Stay, None, nameExtractor, scalarExtractor)
+    else if (char == '}' || char == ']') (Navigation.Up, None, char.toString, nameExtractor, scalarExtractor)
+    else (Navigation.Stay, None, "", nameExtractor, scalarExtractor)
 
   private def createParsingTuple(aggregate: ParsingTuple,
                                  navigation: Navigation,
                                  propertyNameExtractor: PropertyNameExtractor,
                                  scalarValueExtractor: ScalarValueExtractor,
-                                 f: CreatorArgument => JValue) = {
-    val newTree = aggregate.tree.addChild(f)
-    val currentPath = newTree.getRightmostChildPath()
+                                 f: Option[CreatorArgument => JValue],
+                                 rawValue: String) = {
+    val newTree = f.map(aggregate.tree.addChild(_, rawValue, aggregate.currentTreePath)).getOrElse(aggregate.tree)
+    val rightmostPath = newTree.getRightmostChildPath()
+    val oldPath = updatePathObjects(aggregate, rightmostPath)
+    val path =
+      if (navigation == Navigation.Up) oldPath.init
+      else if (navigation == Navigation.Stay) oldPath
+      else rightmostPath
 
-    if (navigation == Navigation.Up) ParsingTuple(newTree, currentPath.init, propertyNameExtractor, scalarValueExtractor)
-    else ParsingTuple(newTree, currentPath, propertyNameExtractor, scalarValueExtractor)
+    ParsingTuple(newTree, path, propertyNameExtractor, scalarValueExtractor)
   }
+
+  private def updatePathObjects(aggregate: ParsingTuple, newObjects: Seq[Node]) =
+    aggregate
+      .currentTreePath
+      .foldLeft((List.empty[Node], newObjects))((pair, _) => pair match {
+        case (newPath, updater) => (newPath :+ updater.head, updater.tail) })
+      ._1
 
   private val getObject = (arg: CreatorArgument) =>
     arg.select[Seq[JField]] match {
@@ -83,12 +88,12 @@ object JsonParser {
         case Some(value) => JField(propertyName, value)
       }
 
-    (Navigation.Stay, Option(getField), newPropertyExtractor, newScalarExtractor)
+    (Navigation.Down, Option(getField), propertyName, newPropertyExtractor, newScalarExtractor)
   }
 
   private def getScalarValue(propertyExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
     val (scalar, newScalarExtractor) = scalarExtractor.flush
-    val (_, newPropertyExtractor) = propertyExtractor.flush
+    val newPropertyExtractor = propertyExtractor.flushBuilder.next(',')
     val value =
       if (scalar.forall(_.isDigit)) JInt(BigInt(scalar))
       else scalar
@@ -99,7 +104,7 @@ object JsonParser {
           .map(b => JBool(b))
           .getOrElse(if (scalar == "null") JNull(0) else JString(scalar)))
 
-    (Navigation.Stay, Option((_: CreatorArgument) => value), newPropertyExtractor, newScalarExtractor)
+    (Navigation.Up, Option((_: CreatorArgument) => value), scalar, newPropertyExtractor, newScalarExtractor)
   }
 
   object CreatorArgumentToJValue extends Poly1 {

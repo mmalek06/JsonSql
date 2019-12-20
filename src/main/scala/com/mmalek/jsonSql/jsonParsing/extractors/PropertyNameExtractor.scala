@@ -14,11 +14,19 @@ class PropertyNameExtractor(builder: StringBuilder) {
     val firstQuoteIdx = value.indexOf('"')
     val secondQuoteIdx = value.indexOf('"', firstQuoteIdx + 1)
 
-    if (firstQuoteIdx > -1 && secondQuoteIdx > -1) {
-      val propertyName = value.substring(firstQuoteIdx, secondQuoteIdx)
+    builder.clear()
 
-      (propertyName, new PropertyNameExtractor(new StringBuilder))
-    } else ("", new PropertyNameExtractor(new StringBuilder))
+    if (firstQuoteIdx > -1 && secondQuoteIdx > -1) {
+      val propertyName = value.substring(firstQuoteIdx + 1, secondQuoteIdx)
+
+      (propertyName, new PropertyNameExtractor(builder))
+    } else ("", new PropertyNameExtractor(builder))
+  }
+
+  def flushBuilder: PropertyNameExtractor = {
+    builder.clear()
+
+    this
   }
 
   private def inPropertyName = {

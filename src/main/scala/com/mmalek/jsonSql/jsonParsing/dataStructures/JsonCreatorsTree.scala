@@ -3,7 +3,7 @@ package com.mmalek.jsonSql.jsonParsing.dataStructures
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 
 sealed trait JsonCreatorsTree {
-  def addChild(childValue: CreatorArgument => JValue, parentPath: Seq[Node] = Nil): Node
+  def addChild(childValue: CreatorArgument => JValue, childUnderlyingValue: Any, parentPath: Seq[Node] = Nil): Node
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node]
 }
 
@@ -11,26 +11,30 @@ object JsonCreatorsTree {
   def zero: JsonCreatorsTree = Zero()
 }
 
-case class Node(value: CreatorArgument => JValue, children: Seq[Node]) extends JsonCreatorsTree {
+case class Node(value: CreatorArgument => JValue, underlyingValue: Any, children: Seq[Node]) extends JsonCreatorsTree {
   def addChild(childValue: CreatorArgument => JValue,
+               childUnderlyingValue: Any,
                parentPath: Seq[Node] = Nil): Node = parentPath match {
-    case Nil => createTree(childValue)
-    case parents => recreateTree(childValue, parents)
+    case Nil => createTree(childValue, childUnderlyingValue)
+    case parents => recreateTree(childValue, childUnderlyingValue, parents)
   }
 
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] =
     children match {
-      case Nil => parents
+      case Nil => parents :+ this
       case elements => elements.last.getRightmostChildPath(parents :+ this)
     }
 
-  private def createTree(childValue: CreatorArgument => JValue) =
-    copy(children = children :+ Node(childValue, Nil))
+  override def toString: String =
+    s"$underlyingValue -> ${children.map(_.toString)}"
 
-  private def recreateTree(childValue: CreatorArgument => JValue, parents: Seq[Node]) = {
+  private def createTree(childValue: CreatorArgument => JValue, childUnderlyingValue: Any) =
+    copy(children = children :+ Node(childValue, childUnderlyingValue, Nil))
+
+  private def recreateTree(childValue: CreatorArgument => JValue, childUnderlyingValue: Any, parents: Seq[Node]) = {
     val reversedParents = parents.reverse
     val immediateParent = reversedParents.head
-    val newChildren = immediateParent.children :+ Node(childValue, Nil)
+    val newChildren = immediateParent.children :+ Node(childValue, childUnderlyingValue, Nil)
     val newImmediateParent = immediateParent.copy(children = newChildren)
     val newParents = newImmediateParent +: reversedParents.tail
 
@@ -44,8 +48,9 @@ case class Node(value: CreatorArgument => JValue, children: Seq[Node]) extends J
 
 case class Zero() extends JsonCreatorsTree {
   def addChild(childValue: CreatorArgument => JValue,
+               childUnderlyingValue: Any,
                parentPath: Seq[Node] = Nil): Node =
-    Node(childValue, Nil)
+    Node(childValue, childUnderlyingValue, Nil)
 
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] = Nil
 }

@@ -13,24 +13,33 @@ object App {
 //
 //    SqlParser.parse(query)
 //
-    val json =
-      """
+//    val json =
+//      """
+//        {
+//          "key": "value",
+//          "object": {
+//            "nestedObject": {
+//              "nestedKey": 1
+//            },
+//            "nestedArray": [1, 3, 5]
+//          },
+//          "array": [
+//            {
+//              "arrayNestedObjectKey": "zxcv"
+//            },
+//            {
+//              "arrayNestedObjectKey": "qwer"
+//            }
+//          ]
+//        }
+//      """
+val json =
+"""
         {
           "key": "value",
           "object": {
-            "nestedObject": {
-              "nestedKey": 1
-            },
-            "nestedArray": [1, 3, 5]
-          },
-          "array": [
-            {
-              "arrayNestedObjectKey": "zxcv"
-            },
-            {
-              "arrayNestedObjectKey": "qwer"
-            }
-          ]
+            "nestedKey": 1
+          }
         }
       """
     JsonParser.parse(json)
