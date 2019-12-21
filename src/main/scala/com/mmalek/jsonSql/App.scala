@@ -38,7 +38,9 @@ object App {
         {
           "key": "value",
           "object": {
-            "nestedKey": 1
+            "nestedKey": 1,
+            "anotherKey": 2,
+            "oneMore": "aaa"
           }
         }
       """

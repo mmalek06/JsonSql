@@ -43,7 +43,7 @@ object JsonParser {
     else if (char == '[') getOpenArray(nameExtractor, scalarExtractor)
     else if (char == '"' && nameExtractor.isPropertyName) getPropertyName(nameExtractor, scalarExtractor)
     else if (scalarExtractor.isScalarValue) getScalarValue(nameExtractor, scalarExtractor)
-    else if (char == '}' || char == ']') (Navigation.Up, None, char.toString, nameExtractor, scalarExtractor)
+    else if (char == '}' || char == ']') getLastObject(char, nameExtractor, scalarExtractor)
     else (Navigation.Stay, None, "", nameExtractor, scalarExtractor)
 
   private def getOpenObject(nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
@@ -121,6 +121,10 @@ object JsonParser {
           .getOrElse(if (scalar == "null") JNull(0) else JString(scalar)))
 
     (Navigation.Up, Option((_: CreatorArgument) => value), scalar, newPropertyExtractor, newScalarExtractor)
+  }
+
+  private def getLastObject(char: Char, nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    (Navigation.Up, None, char.toString, nameExtractor, scalarExtractor)
   }
 
   object CreatorArgumentToJValue extends Poly1 {
