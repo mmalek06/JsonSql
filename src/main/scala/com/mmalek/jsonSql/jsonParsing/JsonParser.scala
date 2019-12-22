@@ -33,7 +33,7 @@ object JsonParser {
       propertyNameExtractor = nextPropertyNameExtractor,
       scalarValueExtractor = nextScalarValueExtractor)
 
-    createParsingTuple(intermediateAggregate, navigation, maybeFunction, value)
+    createParsingTuple(intermediateAggregate, navigation, maybeFunction, value.toString)
   }
 
   private def getActionTuple(char: Char,
@@ -60,6 +60,29 @@ object JsonParser {
     val newScalarExtractor = nextScalarExtractor.next('[')
 
     (Navigation.Down, Some(getArray), "[", newNameExtractor, newScalarExtractor)
+  }
+
+  private def getPropertyName(propertyExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    val (propertyName, newPropertyExtractor) = propertyExtractor.flush
+    val (_, newScalarExtractor) = scalarExtractor.flush
+    val getField = (arg: CreatorArgument) =>
+      arg map CreatorArgumentToJValue select match {
+        case None => JNull(0)
+        case Some(value) => JField(propertyName, value)
+      }
+
+    (Navigation.Down, Option(getField), propertyName, newPropertyExtractor, newScalarExtractor)
+  }
+
+  private def getScalarValue(propertyExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    val (scalar, newScalarExtractor) = scalarExtractor.flush
+    val newPropertyExtractor = propertyExtractor.flushBuilder.next(',')
+
+    (Navigation.Up, Option((_: CreatorArgument) => scalar), scalar, newPropertyExtractor, newScalarExtractor)
+  }
+
+  private def getLastObject(char: Char, nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
+    (Navigation.Up, None, char.toString, nameExtractor, scalarExtractor)
   }
 
   private def createParsingTuple(aggregate: ParsingTuple,
@@ -94,38 +117,6 @@ object JsonParser {
       case None => JNull(0)
       case Some(array) => JArray(array)
     }
-
-  private def getPropertyName(propertyExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
-    val (propertyName, newPropertyExtractor) = propertyExtractor.flush
-    val (_, newScalarExtractor) = scalarExtractor.flush
-    val getField = (arg: CreatorArgument) =>
-      arg map CreatorArgumentToJValue select match {
-        case None => JNull(0)
-        case Some(value) => JField(propertyName, value)
-      }
-
-    (Navigation.Down, Option(getField), propertyName, newPropertyExtractor, newScalarExtractor)
-  }
-
-  private def getScalarValue(propertyExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
-    val (scalar, newScalarExtractor) = scalarExtractor.flush
-    val newPropertyExtractor = propertyExtractor.flushBuilder.next(',')
-    val value =
-      if (scalar.forall(_.isDigit)) JInt(BigInt(scalar))
-      else scalar
-        .toDoubleOption
-        .map(d => JDouble(d))
-        .getOrElse(scalar
-          .toBooleanOption
-          .map(b => JBool(b))
-          .getOrElse(if (scalar == "null") JNull(0) else JString(scalar)))
-
-    (Navigation.Up, Option((_: CreatorArgument) => value), scalar, newPropertyExtractor, newScalarExtractor)
-  }
-
-  private def getLastObject(char: Char, nameExtractor: PropertyNameExtractor, scalarExtractor: ScalarValueExtractor) = {
-    (Navigation.Up, None, char.toString, nameExtractor, scalarExtractor)
-  }
 
   object CreatorArgumentToJValue extends Poly1 {
     implicit val atString: Case.Aux[String, JValue] = at { x: String => JString(x) }
