@@ -20,6 +20,21 @@ class StateMachine {
       case _ => None
     }
 
+  private val canReadObjectEndAfterScalar = (c: Char, sb: StringBuilder, history: Seq[State]) =>
+    if (c == '}') (sb
+      .toString
+      .replaceAll(" +", "")
+      .replaceAll("\"", ""), history) match {
+        case (i, _ :: x :: _)
+          if (x == ReadObjectKey & i.startsWith("\"") & i.endsWith("\"")) |
+             (x == ReadObjectKey & !i.startsWith("\"")) => Some(ReadObjectEnd)
+        case _ => None
+      }
+    else None
+
+  private val canReadArrayAfterScalar = (c: Char, sb: StringBuilder, history: Seq[State]) =>
+    None
+
   private val transitions = HashMap(
     Initial -> Seq(
       (c: Char, sb: StringBuilder, _: Seq[State]) => Some(ReadObject),
@@ -39,7 +54,7 @@ class StateMachine {
     ReadScalar -> Seq(
       canReadObjectKeyAfterScalar,
       canReadObjectAfterScalar,
-      (c: Char, sb: StringBuilder, _: Seq[State]) => Some(ReadObjectEnd),
+      canReadObjectEndAfterScalar,
       (c: Char, sb: StringBuilder, _: Seq[State]) => Some(ReadArray),
       (c: Char, sb: StringBuilder, _: Seq[State]) => Some(ReadArrayEnd),
       (c: Char, sb: StringBuilder, _: Seq[State]) => Some(ReadScalar)),
