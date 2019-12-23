@@ -36,7 +36,7 @@ object App {
       val json =
       """
         {
-          "k{ey": "val,ue",
+          "k{\"ey": "val,ue",
           "object": {
             "nestedKey": 1,
             "anotherKey": 2,
