@@ -1,7 +1,6 @@
 package com.mmalek.jsonSql
 
-import com.mmalek.jsonSql.jsonParsing.{JsonParser, JsonParser2}
-import com.mmalek.jsonSql.jsonParsing.dataStructures.JsonCreatorsTree
+import com.mmalek.jsonSql.jsonParsing.JsonParser
 
 object App {
   def main(args: Array[String]): Unit = {
@@ -44,7 +43,7 @@ object App {
           }
         }
       """
-    JsonParser2.parse(json)
+    JsonParser.parse(json)
 //    val normalized = Normalizer.normalize(json)
 //    val split = normalized.split(",")
 //

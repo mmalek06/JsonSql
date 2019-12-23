@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.jsonParsing.extractors
+package com.mmalek.jsonSql.jsonParsing.obsolete.extractors
 
 class PropertyNameExtractor(builder: StringBuilder) {
   def next(char: Char): PropertyNameExtractor = {

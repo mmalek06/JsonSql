@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.jsonParsing.extractors
+package com.mmalek.jsonSql.jsonParsing.obsolete.extractors
 
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JBool, JDouble, JInt, JNothing, JNull, JString, JValue}
 
