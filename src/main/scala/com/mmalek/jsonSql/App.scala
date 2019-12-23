@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql
 
-import com.mmalek.jsonSql.jsonParsing.JsonParser
+import com.mmalek.jsonSql.jsonParsing.{JsonParser, JsonParser2}
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JsonCreatorsTree
 
 object App {
@@ -36,7 +36,7 @@ object App {
       val json =
       """
         {
-          "key": "value",
+          "k{ey": "val,ue",
           "object": {
             "nestedKey": 1,
             "anotherKey": 2,
@@ -44,7 +44,7 @@ object App {
           }
         }
       """
-    JsonParser.parse(json)
+    JsonParser2.parse(json)
 //    val normalized = Normalizer.normalize(json)
 //    val split = normalized.split(",")
 //
