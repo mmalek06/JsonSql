@@ -2,8 +2,8 @@ package com.mmalek.jsonSql.jsonParsing
 
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 import com.mmalek.jsonSql.jsonParsing.dataStructures._
-import com.mmalek.jsonSql.jsonParsing.fsm.{State, StateMachine}
 import com.mmalek.jsonSql.jsonParsing.fsm.State._
+import com.mmalek.jsonSql.jsonParsing.fsm.{State, StateMachine}
 import shapeless.Poly1
 
 import scala.language.postfixOps
@@ -15,22 +15,21 @@ object JsonParser {
       .normalize(input)
       .foldLeft(seed)((aggregate, char) => {
         aggregate.stateMachine.next(char, aggregate.builder, aggregate.statesHistory).map(sm => {
-          val debugValue = extractString(aggregate.builder, aggregate.stateMachine.state)
-          val (navigation, function) = getActionTuple(aggregate.stateMachine.state, aggregate.builder)
+          val actionTuple = getActionTuple(aggregate.stateMachine.state, aggregate.builder)
 
           aggregate.builder.clear()
           aggregate.builder.append(char)
 
           val nextHistory = sm.state :: aggregate.statesHistory.toList
 
-          createParsingTuple(sm, aggregate, nextHistory, navigation, function, debugValue)
+          createParsingTuple(sm, aggregate, nextHistory, actionTuple)
         }).getOrElse({
           aggregate.builder.append(char)
           aggregate
         })
       })
 
-    TreeRunner.run(tree)
+    tree.jsonTree
   }
 
   private def getSeed =
@@ -41,32 +40,22 @@ object JsonParser {
       new StringBuilder,
       Nil)
 
-  private def extractString(sb: StringBuilder, state: State) =
-    state match {
-      case Initial | ReadObjectEnd | ReadArrayEnd => ""
-      case ReadObject => "{"
-      case ReadObjectKey => getCleanedPropertyKey(sb)
-      case ReadArray => "["
-      case ReadScalar => getCleanedScalar(sb)
-    }
-
   private def getActionTuple(state: State, sb: StringBuilder) =
     state match {
-      case ReadObjectEnd | ReadArrayEnd => (Navigation.Up, None)
-      case ReadObject => (Navigation.Down, Some(getObject))
-      case ReadObjectKey => (Navigation.Down, Some(getPropertyKey(getCleanedPropertyKey(sb))))
-      case ReadArray => (Navigation.Down, Some(getArray))
-      case ReadScalar => (Navigation.Up, Some(getScalar(getCleanedScalar(sb))))
-      case _ => (Navigation.Stay, None)
+      case ReadObjectEnd | ReadArrayEnd => (Navigation.Up, KeyNode(""), None)
+      case ReadObject => (Navigation.Down, ObjectNode, Some(getObject))
+      case ReadObjectKey => (Navigation.Down, KeyNode(sb.toString), Some(getPropertyKey(getCleanedPropertyKey(sb))))
+      case ReadArray => (Navigation.Down, ArrayNode, Some(getArray))
+      case ReadScalar => (Navigation.Up, ScalarNode(sb.toString), Some(getScalar(getCleanedScalar(sb))))
+      case _ => (Navigation.Stay, KeyNode(sb.toString), None)
     }
 
   private def createParsingTuple(sm: StateMachine,
                                  aggregate: ParsingTuple,
                                  history: Seq[State],
-                                 navigation: Navigation,
-                                 f: Option[CreatorArgument => JValue],
-                                 rawValue: String) = {
-    val newTree = f.map(aggregate.tree.addChild(_, rawValue, aggregate.currentTreePath)).getOrElse(aggregate.tree)
+                                 actionTuple: (Navigation, NodeKind, Option[CreatorArgument => JValue])) = {
+    val (navigation, childKind, f) = actionTuple
+    val newTree = f.map(aggregate.tree.addChild(childKind, _, aggregate.currentTreePath)).getOrElse(aggregate.tree)
     val rightmostPath = newTree.getRightmostChildPath()
     val oldPath = updatePathObjects(aggregate.currentTreePath, rightmostPath)
     val path =
@@ -130,13 +119,13 @@ object JsonParser {
     }
 
   object CreatorArgumentToJValue extends Poly1 {
-    implicit val atString: Case.Aux[String, JValue] = at { x: String => JString(x) }
-    implicit val atDouble: Case.Aux[Double, JValue] = at { x: Double => JDouble(x) }
-    implicit val atBigInt: Case.Aux[BigInt, JValue] = at { x: BigInt => JInt(x) }
-    implicit val atBoolean: Case.Aux[Boolean, JValue] = at { x: Boolean => JBool(x) }
-    implicit val atJValue: Case.Aux[JValue, JValue] = at { x: JValue => x }
+    implicit val atJString: Case.Aux[JString, JValue] = at { x: JString => x}
+    implicit val atJDouble: Case.Aux[JDouble, JValue] = at { x: JDouble => x}
+    implicit val atJInt: Case.Aux[JInt, JValue] = at { x: JInt => x}
+    implicit val atJBool: Case.Aux[JBool, JValue] = at { x: JBool => x}
     implicit val atFields: Case.Aux[Seq[JField], JValue] = at { x: Seq[JField] => JObject(x) }
     implicit val atValues: Case.Aux[Seq[JValue], JValue] = at { x: Seq[JValue] => JArray(x) }
+    implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNothing(0) }
   }
 
   private case class ParsingTuple(stateMachine: StateMachine,
