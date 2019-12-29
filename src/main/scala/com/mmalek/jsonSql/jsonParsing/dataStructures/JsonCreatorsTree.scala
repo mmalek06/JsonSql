@@ -3,12 +3,6 @@ package com.mmalek.jsonSql.jsonParsing.dataStructures
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 import shapeless.Coproduct
 
-sealed trait NodeKind
-case class KeyNode(value: String) extends NodeKind
-case object ObjectNode extends NodeKind
-case object ArrayNode extends NodeKind
-case class ScalarNode(value: Any) extends NodeKind
-
 sealed trait JsonCreatorsTree {
   def addChild(childKind: NodeKind,
                childValue: CreatorArgument => JValue,
@@ -46,7 +40,7 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
           case x: JBool => Coproduct[CreatorArgument](x)
           case x: JObject => Coproduct[CreatorArgument](x.obj)
           case x: JArray => Coproduct[CreatorArgument](x.arr)
-          case _ => null
+          case _ => Coproduct[CreatorArgument](())
         }))
 
         JNull

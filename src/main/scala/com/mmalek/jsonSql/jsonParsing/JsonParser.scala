@@ -125,7 +125,7 @@ object JsonParser {
     implicit val atJBool: Case.Aux[JBool, JValue] = at { x: JBool => x}
     implicit val atFields: Case.Aux[Seq[JField], JValue] = at { x: Seq[JField] => JObject(x) }
     implicit val atValues: Case.Aux[Seq[JValue], JValue] = at { x: Seq[JValue] => JArray(x) }
-    implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNothing(0) }
+    implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNull(0) }
   }
 
   private case class ParsingTuple(stateMachine: StateMachine,
