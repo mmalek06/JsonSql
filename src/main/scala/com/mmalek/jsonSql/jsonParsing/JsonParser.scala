@@ -92,7 +92,7 @@ object JsonParser {
   private val getPropertyKey = (name: String) =>
     (arg: CreatorArgument) =>
       arg map CreatorArgumentToJValue select match {
-        case None => JNull(0)
+        case None => JNull
         case Some(value) => JField(name, value)
       }
 
@@ -104,17 +104,17 @@ object JsonParser {
       .getOrElse(scalar
         .toBooleanOption
         .map(b => JBool(b))
-        .getOrElse(if (scalar == "null") JNull(0) else JString(scalar)))
+        .getOrElse(if (scalar == "null") JNull else JString(scalar)))
 
   private val getObject = (arg: CreatorArgument) =>
     arg.select[Seq[JField]] match {
-      case None => JNull(0)
+      case None => JNull
       case Some(fields) => JObject(fields)
     }
 
   private val getArray = (arg: CreatorArgument) =>
     arg.select[Seq[JValue]] match {
-      case None => JNull(0)
+      case None => JNull
       case Some(array) => JArray(array)
     }
 
@@ -125,7 +125,7 @@ object JsonParser {
     implicit val atJBool: Case.Aux[JBool, JValue] = at { x: JBool => x}
     implicit val atFields: Case.Aux[Seq[JField], JValue] = at { x: Seq[JField] => JObject(x) }
     implicit val atValues: Case.Aux[Seq[JValue], JValue] = at { x: Seq[JValue] => JArray(x) }
-    implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNull(0) }
+    implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNull }
   }
 
   private case class ParsingTuple(stateMachine: StateMachine,

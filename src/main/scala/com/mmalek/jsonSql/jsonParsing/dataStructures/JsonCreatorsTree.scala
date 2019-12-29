@@ -72,5 +72,5 @@ case class Zero() extends JsonCreatorsTree {
                childValue: CreatorArgument => JValue,
                parentPath: Seq[Node] = Nil): Node = Node(childKind, childValue, Nil)
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] = Nil
-  def jsonTree: JValue = JNothing(0)
+  def jsonTree: JValue = JNothing
 }
