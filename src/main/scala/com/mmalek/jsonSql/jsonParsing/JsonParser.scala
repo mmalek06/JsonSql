@@ -90,11 +90,7 @@ object JsonParser {
   }
 
   private val getPropertyKey = (name: String) =>
-    (arg: CreatorArgument) =>
-      arg map CreatorArgumentToJValue select match {
-        case None => JNull
-        case Some(value) => JField(name, value)
-      }
+    (arg: CreatorArgument) => JField(name, arg.fold(CreatorArgumentToJValue))
 
   private val getScalar = (scalar: String) => (_: CreatorArgument) =>
     if (scalar.forall(_.isDigit)) JInt(BigInt(scalar))
@@ -107,15 +103,15 @@ object JsonParser {
         .getOrElse(if (scalar == "null") JNull else JString(scalar)))
 
   private val getObject = (arg: CreatorArgument) =>
-    arg.select[Seq[JField]] match {
+    arg.select[JObject] match {
       case None => JNull
-      case Some(fields) => JObject(fields)
+      case Some(obj) => obj
     }
 
   private val getArray = (arg: CreatorArgument) =>
-    arg.select[Seq[JValue]] match {
+    arg.select[JArray] match {
       case None => JNull
-      case Some(array) => JArray(array)
+      case Some(array) => array
     }
 
   object CreatorArgumentToJValue extends Poly1 {
@@ -123,8 +119,8 @@ object JsonParser {
     implicit val atJDouble: Case.Aux[JDouble, JValue] = at { x: JDouble => x}
     implicit val atJInt: Case.Aux[JInt, JValue] = at { x: JInt => x}
     implicit val atJBool: Case.Aux[JBool, JValue] = at { x: JBool => x}
-    implicit val atFields: Case.Aux[Seq[JField], JValue] = at { x: Seq[JField] => JObject(x) }
-    implicit val atValues: Case.Aux[Seq[JValue], JValue] = at { x: Seq[JValue] => JArray(x) }
+    implicit val atFields: Case.Aux[JObject, JValue] = at { x: JObject => x }
+    implicit val atValues: Case.Aux[JArray, JValue] = at { x: JArray => x }
     implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNull }
   }
 

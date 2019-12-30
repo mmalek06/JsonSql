@@ -1,8 +1,8 @@
 package com.mmalek.jsonSql.jsonParsing
 
-import com.mmalek.jsonSql.jsonParsing.dataStructures.{JBool, JDouble, JField, JInt, JString, JValue}
+import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import shapeless.{:+:, CNil}
 
 object Types {
-  type CreatorArgument = Unit :+: JString :+: JDouble :+: JInt :+: JBool :+: Seq[JField] :+: Seq[JValue] :+: CNil
+  type CreatorArgument = Unit :+: JString :+: JDouble :+: JInt :+: JBool :+: JObject :+: JArray :+: CNil
 }

@@ -33,17 +33,20 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
     children match {
       case Nil => value(Coproduct[CreatorArgument](()))
       case elements =>
-        val values = elements.map(e => value(e.jsonTree match {
-          case x: JString => Coproduct[CreatorArgument](x)
-          case x: JDouble => Coproduct[CreatorArgument](x)
-          case x: JInt => Coproduct[CreatorArgument](x)
-          case x: JBool => Coproduct[CreatorArgument](x)
-          case x: JObject => Coproduct[CreatorArgument](x.obj)
-          case x: JArray => Coproduct[CreatorArgument](x.arr)
-          case _ => Coproduct[CreatorArgument](())
-        }))
+        val values = elements.map(_.jsonTree)
+        val argument = values match {
+          case (x: JString) :: Nil => Coproduct[CreatorArgument](x)
+          case (x: JDouble) :: Nil => Coproduct[CreatorArgument](x)
+          case (x: JInt) :: Nil => Coproduct[CreatorArgument](x)
+          case (x: JBool) :: Nil => Coproduct[CreatorArgument](x)
+          case (x: JObject) :: Nil => Coproduct[CreatorArgument](x)
+          case (x: JArray) :: Nil => Coproduct[CreatorArgument](x)
+          case x: Seq[JField] => Coproduct[CreatorArgument](JObject(x))
+          case x: Seq[JValue] => Coproduct[CreatorArgument](JArray(x))
+        }
+        val result = value(argument)
 
-        JNull
+        result
     }
 
   override def toString: String =
