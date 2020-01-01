@@ -3,19 +3,19 @@ package com.mmalek.jsonSql.jsonParsing.dataStructures
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 import shapeless.Coproduct
 
-sealed trait JsonCreatorsTree {
+sealed trait FunctionsTree {
   def addChild(childKind: NodeKind,
                childValue: CreatorArgument => JValue,
                parentPath: Seq[Node] = Nil): Node
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node]
-  def jsonTree: JValue
+  def execute: JValue
 }
 
-object JsonCreatorsTree {
-  def zero: JsonCreatorsTree = Zero()
+object FunctionsTree {
+  def zero: FunctionsTree = Zero
 }
 
-case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[Node]) extends JsonCreatorsTree {
+case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[Node]) extends FunctionsTree {
   def addChild(childKind: NodeKind,
                childValue: CreatorArgument => JValue,
                parentPath: Seq[Node] = Nil): Node = parentPath match {
@@ -29,21 +29,12 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
       case elements => elements.last.getRightmostChildPath(parents :+ this)
     }
 
-  def jsonTree: JValue =
+  def execute: JValue =
     children match {
       case Nil => value(Coproduct[CreatorArgument](()))
       case elements =>
-        val values = elements.map(_.jsonTree)
-        val argument = values match {
-          case (x: JString) :: Nil => Coproduct[CreatorArgument](x)
-          case (x: JDouble) :: Nil => Coproduct[CreatorArgument](x)
-          case (x: JInt) :: Nil => Coproduct[CreatorArgument](x)
-          case (x: JBool) :: Nil => Coproduct[CreatorArgument](x)
-          case (x: JObject) :: Nil => Coproduct[CreatorArgument](x)
-          case (x: JArray) :: Nil => Coproduct[CreatorArgument](x)
-          case x: Seq[JField] => Coproduct[CreatorArgument](JObject(x))
-          case x: Seq[JValue] => Coproduct[CreatorArgument](JArray(x))
-        }
+        val values = elements.map(_.execute)
+        val argument = getArgument(values)
         val result = value(argument)
 
         result
@@ -51,6 +42,18 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
 
   override def toString: String =
     s"$kind -> ${children.map(_.toString)}"
+
+  private def getArgument(values: Seq[JValue]) =
+    values match {
+      case (x: JString) :: Nil => Coproduct[CreatorArgument](x)
+      case (x: JDouble) :: Nil => Coproduct[CreatorArgument](x)
+      case (x: JInt) :: Nil => Coproduct[CreatorArgument](x)
+      case (x: JBool) :: Nil => Coproduct[CreatorArgument](x)
+      case (x: JObject) :: Nil => Coproduct[CreatorArgument](x)
+      case (x: JArray) :: Nil => Coproduct[CreatorArgument](x)
+      case x: Seq[JField] => Coproduct[CreatorArgument](JObject(x))
+      case x: Seq[JValue] => Coproduct[CreatorArgument](JArray(x))
+    }
 
   private def createTree(childKind: NodeKind, childValue: CreatorArgument => JValue) =
     copy(children = children :+ Node(childKind, childValue, Nil))
@@ -70,10 +73,10 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
   }
 }
 
-case class Zero() extends JsonCreatorsTree {
+object Zero extends FunctionsTree {
   def addChild(childKind: NodeKind,
                childValue: CreatorArgument => JValue,
                parentPath: Seq[Node] = Nil): Node = Node(childKind, childValue, Nil)
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] = Nil
-  def jsonTree: JValue = JNothing
+  def execute: JValue = JNothing
 }

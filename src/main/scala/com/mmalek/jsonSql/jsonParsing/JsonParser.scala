@@ -29,13 +29,13 @@ object JsonParser {
         })
       })
 
-    tree.jsonTree
+    tree.execute
   }
 
   private def getSeed =
     ParsingTuple(
       new StateMachine(State.Initial),
-      JsonCreatorsTree.zero,
+      FunctionsTree.zero,
       Nil,
       new StringBuilder,
       Nil)
@@ -125,7 +125,7 @@ object JsonParser {
   }
 
   private case class ParsingTuple(stateMachine: StateMachine,
-                                  tree: JsonCreatorsTree,
+                                  tree: FunctionsTree,
                                   currentTreePath: Seq[Node],
                                   builder: StringBuilder,
                                   statesHistory: Seq[State])
