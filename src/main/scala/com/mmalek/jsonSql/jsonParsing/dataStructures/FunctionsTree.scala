@@ -3,6 +3,8 @@ package com.mmalek.jsonSql.jsonParsing.dataStructures
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 import shapeless.Coproduct
 
+import scala.annotation.tailrec
+
 sealed trait FunctionsTree {
   def addChild(childKind: NodeKind,
                childValue: CreatorArgument => JValue,
@@ -23,7 +25,8 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
     case parents => recreateTree(childKind, childValue, parents)
   }
 
-  def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] =
+  @tailrec
+  final def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] =
     children match {
       case Nil => parents :+ this
       case elements => elements.last.getRightmostChildPath(parents :+ this)
