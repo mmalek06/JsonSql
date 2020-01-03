@@ -32,7 +32,8 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
       case elements => elements.last.getRightmostChildPath(parents :+ this)
     }
 
-  def execute: JValue =
+  // TODO: should be tailrec - will revisit in the future
+  final def execute: JValue =
     children match {
       case Nil => value(Coproduct[CreatorArgument](()))
       case elements =>
@@ -54,8 +55,8 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
       case (x: JBool) :: Nil => Coproduct[CreatorArgument](x)
       case (x: JObject) :: Nil => Coproduct[CreatorArgument](x)
       case (x: JArray) :: Nil => Coproduct[CreatorArgument](x)
-      case x: Seq[JField] => Coproduct[CreatorArgument](JObject(x))
-      case x: Seq[JValue] => Coproduct[CreatorArgument](JArray(x))
+      case (_: JField) :: (_: Seq[JField]) => Coproduct[CreatorArgument](JObject(values.asInstanceOf[Seq[JField]]))
+      case (_: JValue) :: (_: Seq[JValue]) => Coproduct[CreatorArgument](JArray(values))
     }
 
   private def createTree(childKind: NodeKind, childValue: CreatorArgument => JValue) =

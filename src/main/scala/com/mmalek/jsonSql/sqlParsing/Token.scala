@@ -1,7 +1,7 @@
-package com.mmalek.jsonSql.sqlParsing.tokenization
+package com.mmalek.jsonSql.sqlParsing
 
+import com.mmalek.jsonSql.sqlParsing.TokenType.{Function, Initializer, Statement, Value}
 import enumeratum._
-import com.mmalek.jsonSql.sqlParsing.tokenization.TokenType._
 
 sealed abstract class Token(`type`: TokenType) extends EnumEntry
 
