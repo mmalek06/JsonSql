@@ -39,8 +39,8 @@ package object sqlParsing {
   }
 
   private def getNewAggregate(oldAggregate: TokenizingTuple) = {
-    val value = oldAggregate.expressionBuilder.toString.trim.toLowerCase
-    val token = mappedTokens.getOrElse(value, Token.Any(value))
+    val value = oldAggregate.expressionBuilder.toString.trim
+    val token = mappedTokens.getOrElse(value.toLowerCase, Token.Any(value))
     val list = oldAggregate.tokens :+ token
 
     TokenizingTuple(list, new StringBuilder)

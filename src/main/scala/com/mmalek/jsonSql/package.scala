@@ -10,7 +10,7 @@ package object jsonSql {
     val json = getJson(rawJson)
     val tokens = tokenize(rawSql)
     val completeTokens = putJsonToken(tokens, json)
-    val actions = getActions(completeTokens)
+    val actions = getSelectionActions(completeTokens)
 
     actions.from().map(j => actions.select(j.value))
   }
@@ -18,7 +18,7 @@ package object jsonSql {
   private def putJsonToken(tokens: Seq[Token], json: JValue) =
     tokens.flatMap(t => if (t == From) List(t, Json(json)) else List(t))
 
-  private def getActions(completeTokens: Seq[Token]) = {
+  private def getSelectionActions(completeTokens: Seq[Token]) = {
     val actions = completeTokens.foldLeft(ActionsTuple(None, Map[Token, Seq[AnyToken]]()))(foldAsActionData).actions
 
     new {
