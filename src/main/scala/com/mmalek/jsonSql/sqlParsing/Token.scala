@@ -1,5 +1,6 @@
 package com.mmalek.jsonSql.sqlParsing
 
+import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.TokenType.{Function, Initializer, Statement, Value}
 import enumeratum._
 
@@ -21,5 +22,5 @@ object Token extends Enum[Token] {
   case object Where extends Token(Statement)
 
   case class Any(value: String) extends Token(Value)
-  case class Json(value: String) extends Token(Value)
+  case class Json(value: JValue) extends Token(Value)
 }

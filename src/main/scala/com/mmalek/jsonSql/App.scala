@@ -18,7 +18,8 @@ object App {
         SELECT object.nestedKey, object.anotherKey
         FROM ##json##
         WHERE key = 'value'"""
+    val data = runJsonSql(query, json)
 
-    (new Runner).run(query, json)
+    println("ASDf")
   }
 }
