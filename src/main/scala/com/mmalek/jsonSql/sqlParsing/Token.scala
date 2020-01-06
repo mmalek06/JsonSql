@@ -1,26 +1,25 @@
 package com.mmalek.jsonSql.sqlParsing
 
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
-import com.mmalek.jsonSql.sqlParsing.TokenType.{Function, Initializer, Statement, Value}
 import enumeratum._
 
-sealed abstract class Token(`type`: TokenType) extends EnumEntry
+sealed trait Token extends EnumEntry
 
 object Token extends Enum[Token] {
   val values: IndexedSeq[Token] = findValues
 
-  case object Sum extends Token(Function)
-  case object Avg extends Token(Function)
+  case object Sum extends Token
+  case object Avg extends Token
 
-  case object From extends Token(Initializer)
+  case object From extends Token
 
-  case object Insert extends Token(Statement)
-  case object Select extends Token(Statement)
-  case object Update extends Token(Statement)
-  case object Delete extends Token(Statement)
+  case object Insert extends Token
+  case object Select extends Token
+  case object Update extends Token
+  case object Delete extends Token
 
-  case object Where extends Token(Statement)
+  case object Where extends Token
 
-  case class Any(value: String) extends Token(Value)
-  case class Json(value: JValue) extends Token(Value)
+  case class Any(value: String) extends Token
+  case class Json(value: JValue) extends Token
 }

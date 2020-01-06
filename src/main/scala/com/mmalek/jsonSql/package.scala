@@ -6,13 +6,17 @@ import com.mmalek.jsonSql.sqlParsing.Token.{From, Json, Select, Where, Any => An
 import com.mmalek.jsonSql.sqlParsing.{Token, tokenize}
 
 package object jsonSql {
-  def runJsonSql(rawSql: String, rawJson: String): Option[Seq[Seq[Option[JValue]]]] = {
+  def runJsonSql(rawSql: String, rawJson: String): Option[Map[String, Seq[Option[JValue]]]] = {
     val json = getJson(rawJson)
     val tokens = tokenize(rawSql)
     val completeTokens = putJsonToken(tokens, json)
-    val actions = getSelectionActions(completeTokens)
 
-    actions.from().map(j => actions.select(j.value))
+    if (completeTokens.head == Select) {
+      val actions = getSelectionActions(completeTokens)
+
+      if (completeTokens.contains(Where)) actions.from().flatMap(j => actions.where(j.value).map(actions.select))
+      else actions.from().map(j => actions.select(j.value))
+    } else None
   }
 
   private def putJsonToken(tokens: Seq[Token], json: JValue) =
@@ -22,8 +26,8 @@ package object jsonSql {
     val actions = completeTokens.foldLeft(ActionsTuple(None, Map[Token, Seq[AnyToken]]()))(foldAsActionData).actions
 
     new {
-      def select(json: JValue): Seq[Seq[Option[JValue]]] =
-        actions(Select).map(getValues(_, json))
+      def select(json: JValue): Map[String, Seq[Option[JValue]]] =
+        actions(Select).flatMap(getValues(_, json)).toMap
 
       def from(): Option[Json] =
         actions(From).head match {
@@ -32,7 +36,7 @@ package object jsonSql {
         }
 
       def where(json: JValue): Option[JValue] =
-        ???
+        actions.get(Where).map(filterJson(_, json))
     }
   }
 
@@ -52,9 +56,12 @@ package object jsonSql {
 
   private def getValues(token: Token, value: JValue) =
     token match {
-      case t: AnyToken => walkDown(t.value.split("\\."), value)
-      case _ => Seq(None)
+      case t: AnyToken => Some(t.value -> walkDown(t.value.split("\\."), value))
+      case _ => None
     }
+
+  private def filterJson(filters: Seq[Token], json: JValue): JValue =
+    ???
 
   private def walkDown(path: Seq[String], json: JValue): Seq[Option[JValue]] =
     if (path.isEmpty) Seq(None)
