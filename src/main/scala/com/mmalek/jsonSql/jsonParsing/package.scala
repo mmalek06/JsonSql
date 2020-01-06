@@ -14,8 +14,8 @@ package object jsonParsing {
     val ParsingTuple(_, tree, _, _, _) = Normalizer
       .normalize(input)
       .foldLeft(seed)((aggregate, char) => {
-        aggregate.stateMachine.next(char, aggregate.builder, aggregate.statesHistory).map(sm => {
-          val actionTuple = getActionTuple(aggregate.stateMachine.state, aggregate.builder)
+        aggregate.stateMachineOrError.next(char, aggregate.builder, aggregate.statesHistory).map(sm => {
+          val actionTuple = getActionTuple(aggregate.stateMachineOrError.state, aggregate.builder)
 
           aggregate.builder.clear()
           aggregate.builder.append(char)
@@ -124,7 +124,7 @@ package object jsonParsing {
     implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNull }
   }
 
-  private case class ParsingTuple(stateMachine: StateMachine,
+  private case class ParsingTuple(stateMachineOrError: StateMachine,
                                   tree: FunctionsTree,
                                   currentTreePath: Seq[Node],
                                   builder: StringBuilder,
