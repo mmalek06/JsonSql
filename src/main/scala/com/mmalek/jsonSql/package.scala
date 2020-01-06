@@ -2,7 +2,7 @@ package com.mmalek
 
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JObject, JValue}
 import com.mmalek.jsonSql.jsonParsing.getJson
-import com.mmalek.jsonSql.sqlParsing.Token.{From, Json, Select, Where, Any => AnyToken}
+import com.mmalek.jsonSql.sqlParsing.Token.{From, Json, Select, Where, Value}
 import com.mmalek.jsonSql.sqlParsing.{Token, tokenize}
 
 package object jsonSql {
@@ -23,7 +23,7 @@ package object jsonSql {
     tokens.flatMap(t => if (t == From) List(t, Json(json)) else List(t))
 
   private def getSelectionActions(completeTokens: Seq[Token]) = {
-    val actions = completeTokens.foldLeft(ActionsTuple(None, Map[Token, Seq[AnyToken]]()))(foldAsActionData).actions
+    val actions = completeTokens.foldLeft(ActionsTuple(None, Map[Token, Seq[Value]]()))(foldAsActionData).actions
 
     new {
       def select(json: JValue): Map[String, Seq[Option[JValue]]] =
@@ -56,12 +56,18 @@ package object jsonSql {
 
   private def getValues(token: Token, value: JValue) =
     token match {
-      case t: AnyToken => Some(t.value -> walkDown(t.value.split("\\."), value))
+      case t: Value => Some(t.value -> walkDown(t.value.split("\\."), value))
       case _ => None
     }
 
   private def filterJson(filters: Seq[Token], json: JValue): JValue =
-    ???
+    filters.flatMap {
+      case t: Value => Some(t)
+      case _ => None
+    } match {
+      case Nil => json
+      case x => json
+    }
 
   private def walkDown(path: Seq[String], json: JValue): Seq[Option[JValue]] =
     if (path.isEmpty) Seq(None)

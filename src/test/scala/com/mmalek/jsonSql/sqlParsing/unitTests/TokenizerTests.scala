@@ -12,10 +12,10 @@ class TokenizerTests extends AnyFlatSpec with Matchers {
 
     result.length should be (5)
     result(0) should be (Select)
-    result(1) should be (Any("thing"))
+    result(1) should be (Value("thing"))
     result(2) should be (From)
     result(3) should be (Where)
-    result(4) should be (Any("condition"))
+    result(4) should be (Value("condition"))
   }
 
   it should "parse even though text is not sql" in {
@@ -23,7 +23,7 @@ class TokenizerTests extends AnyFlatSpec with Matchers {
     val result = tokenize(query).toVector
 
     result.length should be (2)
-    result(0) should be (Any("lorem"))
-    result(1) should be (Any("ipsum"))
+    result(0) should be (Value("lorem"))
+    result(1) should be (Value("ipsum"))
   }
 }

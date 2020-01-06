@@ -20,6 +20,7 @@ object Token extends Enum[Token] {
 
   case object Where extends Token
 
-  case class Any(value: String) extends Token
+  case class Value(value: String) extends Token
   case class Json(value: JValue) extends Token
+  case class Predicate(value: String) extends Token
 }
