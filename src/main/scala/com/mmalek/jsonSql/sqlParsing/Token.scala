@@ -3,13 +3,13 @@ package com.mmalek.jsonSql.sqlParsing
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import enumeratum._
 
-sealed trait Token extends EnumEntry
+sealed abstract class Token(val name: String = "") extends EnumEntry
 
 object Token extends Enum[Token] {
   val values: IndexedSeq[Token] = findValues
 
-  case object Sum extends Token
-  case object Avg extends Token
+  case object Sum extends Token("sum")
+  case object Avg extends Token("avg")
 
   case object From extends Token
 

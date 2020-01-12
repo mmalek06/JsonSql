@@ -38,7 +38,8 @@ class StateMachine(val state: State) {
       canReadObjectKeyAfterSomeEnd,
       canReadScalarAfterSomeEnd,
       canReadArrayEndAfterSomeEnd,
-      canReadObjectEndAfterSomeEnd))
+      canReadObjectEndAfterSomeEnd
+    ))
 
   def next(c: Char, sb: StringBuilder, history: Seq[State]): Option[StateMachine] =
     transitions(state).flatMap(f => f(c, sb, history)) match {
