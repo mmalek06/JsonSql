@@ -2,28 +2,33 @@ package com.mmalek
 
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JObject, JValue}
 import com.mmalek.jsonSql.jsonParsing.getJson
-import com.mmalek.jsonSql.sqlParsing.Token.{From, Json, Select, Where, Value}
+import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field, From, Json, Operator, Select, Where}
 import com.mmalek.jsonSql.sqlParsing.{Token, tokenize}
 
 package object jsonSql {
-  def runJsonSql(rawSql: String, rawJson: String): Option[Map[String, Seq[Option[JValue]]]] = {
+  def runJsonSql(rawSql: String, rawJson: String): Either[String, Option[Map[String, Seq[Option[JValue]]]]] = {
     val json = getJson(rawJson)
-    val tokens = tokenize(rawSql)
-    val completeTokens = putJsonToken(tokens, json)
+    val (tokens, error) = tokenize(rawSql)
 
-    if (completeTokens.head == Select) {
-      val actions = getSelectionActions(completeTokens)
+    error match {
+      case Some(e) => Left(e)
+      case None =>
+        val completeTokens = putJsonToken(tokens, json)
 
-      if (completeTokens.contains(Where)) actions.from().flatMap(j => actions.where(j.value).map(actions.select))
-      else actions.from().map(j => actions.select(j.value))
-    } else None
+        if (completeTokens.head == Select) {
+          val actions = getSelectionActions(completeTokens)
+
+          if (completeTokens.contains(Where)) Right(actions.from().flatMap(j => actions.where(j.value).map(actions.select)))
+          else Right(actions.from().map(j => actions.select(j.value)))
+        } else Right(None)
+    }
   }
 
   private def putJsonToken(tokens: Seq[Token], json: JValue) =
     tokens.flatMap(t => if (t == From) List(t, Json(json)) else List(t))
 
   private def getSelectionActions(completeTokens: Seq[Token]) = {
-    val actions = completeTokens.foldLeft(ActionsTuple(None, Map[Token, Seq[Value]]()))(foldAsActionData).actions
+    val actions = completeTokens.foldLeft(ActionsTuple(None, Map[Token, Seq[Token]]()))(foldAsActionData).actions
 
     new {
       def select(json: JValue): Map[String, Seq[Option[JValue]]] =
@@ -54,15 +59,19 @@ package object jsonSql {
     }
   }
 
-  private def getValues(token: Token, value: JValue) =
+  private def getValues(token: Token, value: JValue): Option[(String, Seq[Option[JValue]])] =
     token match {
-      case t: Value => Some(t.value -> walkDown(t.value.split("\\."), value))
+      case t: Field => Some(t.value -> walkDown(t.value.split("\\."), value))
+//      case t: Constant => Some(t.value -> Seq(Some(JValue(t.value))))
+//      case t: Operator => Some(t.value)
       case _ => None
     }
 
   private def filterJson(filters: Seq[Token], json: JValue): JValue =
     filters.flatMap {
-      case t: Value => Some(t)
+      case t: Field => Some(t)
+      case t: Constant => Some(t)
+      case t: Operator => Some(t)
       case _ => None
     } match {
       case Nil => json

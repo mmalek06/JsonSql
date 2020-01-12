@@ -1,77 +1,64 @@
 package com.mmalek.jsonSql
 
-import com.mmalek.jsonSql.sqlParsing.Token.{From, Predicate, Select, Value, Where}
-
-import scala.collection.immutable.HashSet
+import com.mmalek.jsonSql.sqlParsing.Token._
+import com.mmalek.jsonSql.sqlParsing.fsm.State._
+import com.mmalek.jsonSql.sqlParsing.fsm.{State, StateMachine}
 
 package object sqlParsing {
-  private val stopChars = HashSet[Char](' ', ',', '(', ')')
-  private val mappedTokens = mapTokens
-
-  def tokenize(input: String): Seq[Token] = {
-    val seed = TokenizingTuple(List.empty[Token], new StringBuilder)
+  def tokenize(input: String): (Seq[Token], Option[String]) = {
     val cleanedInput = input.replace("##json##", "")
-    val tokens = createTokens(cleanedInput, seed)
-    val aggregate = getNewAggregate(tokens)
-    val result = filterOutEmpty(aggregate.tokens)
+    val seed = getSeed
+    val ParsingTuple(_, tokens, _, error) = cleanedInput
+      .foldLeft(seed)((aggregate, char) => {
+        if (aggregate.invalidSql.isDefined) aggregate
+        else {
+          aggregate.stateMachine.next(char, aggregate.builder).map(sm => {
+            getToken(aggregate.stateMachine.state, aggregate.builder) match {
+              case Left(error) => aggregate.copy(invalidSql = Some(error))
+              case Right(token) =>
+                aggregate.builder.clear()
+                aggregate.builder.append(char)
 
-    result
+                aggregate.copy(stateMachine = sm, tokens = aggregate.tokens :+ token)
+            }
+          }).getOrElse({
+            aggregate.builder.append(char)
+            aggregate
+          })
+        }
+      })
+
+    (tokens, error)
   }
 
-  private def mapTokens =
-    Token.values
-      .map(t => t.toString.toLowerCase -> t)
-      .filterNot(pair => pair._1 == Value.toString)
-      .toMap
+  private def getSeed =
+    ParsingTuple(
+      new StateMachine(State.Initial),
+      List.empty[Token],
+      new StringBuilder,
+      None)
 
-  private def createTokens(input: String, seed: TokenizingTuple) =
-    input
-      .trim
-      .foldLeft(seed)((aggregate, char) => makeStandardTokens(aggregate, char))
-
-  private def makeStandardTokens(aggregate: TokenizingTuple, char: Char) = {
-    val isStopChar = stopChars.contains(char)
-    val sb = aggregate.expressionBuilder
-
-    if (isStopChar && sb.isEmpty) aggregate
-    else if (isStopChar) getNewAggregate(aggregate)
-    else aggregate.copy(expressionBuilder = aggregate.expressionBuilder.append(char))
-  }
-
-  private def getNewAggregate(oldAggregate: TokenizingTuple) = {
-    val value = oldAggregate.expressionBuilder.toString.trim
-    val token = getToken(value, oldAggregate.tokens)
-    val list = oldAggregate.tokens :+ token
-
-    TokenizingTuple(list, new StringBuilder)
-  }
-
-  private def getToken(value: String, prevTokens: Seq[Token]) =
-    mappedTokens.getOrElse(value.toLowerCase, Token.Value(value)) match {
-      case t: Value =>
-        val hasWhere = prevTokens
-          .reverseIterator
-          .foldLeft(WhereSearch(continue = true, foundWhere = false))((aggregate, token) =>
-            if (aggregate.continue && (token == Select || token == From)) aggregate.copy(continue = false)
-            else if (aggregate.continue && token == Where) aggregate.copy(continue = false, foundWhere = true)
-            else aggregate)
-          .foundWhere
-
-        if (hasWhere) Predicate(t.value)
-        else t
-      case x => x
+  private def getToken(state: State, builder: StringBuilder) =
+    (builder.toString.trim, state) match {
+      case (_, ReadInsert) => Right(Insert)
+      case (_, ReadSelect) => Right(Select)
+      case (_, ReadUpdate) => Right(Update)
+      case (_, ReadDelete) => Right(Delete)
+      case (value, ReadFunction) =>
+        value.toLowerCase match {
+          case "avg" => Right(Avg)
+          case "sum" => Right(Sum)
+          case _ => Left("This function is not implemented yet. Parsing aborted...")
+        }
+      case (value, ReadField) => Right(Field(value))
+      case (value, ReadConstant) => Right(Constant(value))
+      case (value, ReadOperator) => Right(Operator(value(0).toString))
+      case (_, ReadFrom) => Right(From)
+      case (_, ReadWhere) => Right(Where)
     }
 
-  private def filterOutEmpty(tokens: Seq[Token]) =
-    tokens.filterNot {
-      case Value("") => true
-      case Predicate("") => true
-      case _ => false
-    }
-
-  private case class TokenizingTuple(tokens: Seq[Token],
-                                     expressionBuilder: StringBuilder)
-
-  private case class WhereSearch(continue: Boolean,
-                                 foundWhere: Boolean)
+  private case class ParsingTuple(stateMachine: StateMachine,
+                                  tokens: Seq[Token],
+                                  builder: StringBuilder,
+                                  invalidSql: Option[String])
 }
