@@ -94,7 +94,7 @@ class StateMachine(val state: State) {
     else None
 
   private def canReadOperator(c: Char, valueSoFar: String) =
-    if (operators.contains(c)) Some(ReadOperator) else None
+    if (valueSoFar.nonEmpty && operators.contains(valueSoFar(0))) Some(ReadOperator) else None
 
   private def canReadFrom(c: Char, valueSoFar: String) =
     if (valueSoFar.toLowerCase == "from") Some(ReadFrom) else None

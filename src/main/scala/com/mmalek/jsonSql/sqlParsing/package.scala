@@ -45,17 +45,19 @@ package object sqlParsing {
       case (_, ReadSelect) => Right(Select)
       case (_, ReadUpdate) => Right(Update)
       case (_, ReadDelete) => Right(Delete)
-      case (value, ReadFunction) =>
-        cleanValue(value).toLowerCase match {
-          case "avg" => Right(Avg)
-          case "sum" => Right(Sum)
-          case _ => Left("This function is not implemented yet. Parsing aborted...")
-        }
+      case (value, ReadFunction) => getFunction(value)
       case (value, ReadField) => Right(Field(cleanValue(value)))
       case (value, ReadConstant) => Right(Constant(cleanValue(value)))
       case (value, ReadOperator) => Right(Operator(cleanValue(value)(0).toString))
       case (_, ReadFrom) => Right(From)
       case (_, ReadWhere) => Right(Where)
+    }
+
+  private def getFunction(value: String) =
+    cleanValue(value).toLowerCase match {
+      case "avg" => Right(Avg)
+      case "sum" => Right(Sum)
+      case _ => Left("This function is not implemented yet. Parsing aborted...")
     }
 
   @tailrec
