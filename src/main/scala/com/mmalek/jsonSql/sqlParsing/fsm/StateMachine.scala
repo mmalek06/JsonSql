@@ -60,32 +60,37 @@ class StateMachine(val state: State) {
     }
 
   private def canReadInsert(c: Char, valueSoFar: String) =
-    if (valueSoFar.toLowerCase == "insert") Some(ReadSelect) else None
+    if (valueSoFar.toLowerCase == "insert") Some(ReadInsert) else None
 
   private def canReadUpdate(c: Char, valueSoFar: String) =
-    if (valueSoFar.toLowerCase == "update") Some(ReadSelect) else None
+    if (valueSoFar.toLowerCase == "update") Some(ReadUpdate) else None
 
   private def canReadDelete(c: Char, valueSoFar: String) =
-    if (valueSoFar.toLowerCase == "delete") Some(ReadSelect) else None
+    if (valueSoFar.toLowerCase == "delete") Some(ReadDelete) else None
 
   private def canReadSelect(c: Char, valueSoFar: String) =
     if (valueSoFar.toLowerCase == "select") Some(ReadSelect) else None
 
   private def canReadFunction(c: Char, valueSoFar: String) =
-    if(valueSoFar.nonEmpty && valueSoFar(0) != '"' && (c == ' ' || c == '(' || operators.contains(c)) && functions.contains(valueSoFar)) Some(ReadFunction)
+    if(valueSoFar.nonEmpty &&
+       valueSoFar != "," &&
+       valueSoFar(0) != '"' &&
+       (c == ' ' || c == '(' || operators.contains(c)) && functions.contains(valueSoFar)) Some(ReadFunction)
     else None
 
   private def canReadField(c: Char, valueSoFar: String) =
     if(valueSoFar.nonEmpty &&
-      !functions.contains(valueSoFar.toLowerCase) &&
-      !valueSoFar.forall(_.isDigit) &&
-      (c == ' ' || c == ',' || operators.contains(c))) Some(ReadField)
+       valueSoFar != "," &&
+       !functions.contains(valueSoFar.toLowerCase) &&
+       !valueSoFar.forall(_.isDigit) &&
+       (c == ' ' || c == ',' || operators.contains(c))) Some(ReadField)
     else None
 
   private def canReadConstant(c: Char, valueSoFar: String) =
     if (valueSoFar.nonEmpty &&
-       (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit) || valueSoFar(0) == '"') &&
-       (c == ' ' || c == ',' || operators.contains(c))) Some(ReadConstant)
+        valueSoFar != "," &&
+        (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit) || valueSoFar(0) == '"') &&
+        (c == ' ' || c == ',' || operators.contains(c))) Some(ReadConstant)
     else None
 
   private def canReadOperator(c: Char, valueSoFar: String) =

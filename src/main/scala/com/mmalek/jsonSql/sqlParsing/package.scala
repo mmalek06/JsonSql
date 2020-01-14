@@ -4,6 +4,8 @@ import com.mmalek.jsonSql.sqlParsing.Token._
 import com.mmalek.jsonSql.sqlParsing.fsm.State._
 import com.mmalek.jsonSql.sqlParsing.fsm.{State, StateMachine}
 
+import scala.annotation.tailrec
+
 package object sqlParsing {
   def tokenize(input: String): (Seq[Token], Option[String]) = {
     val cleanedInput = input.replace("##json##", "")
@@ -13,12 +15,11 @@ package object sqlParsing {
         if (aggregate.invalidSql.isDefined) aggregate
         else {
           aggregate.stateMachine.next(char, aggregate.builder).map(sm => {
-            getToken(aggregate.stateMachine.state, aggregate.builder) match {
+            getToken(sm.state, aggregate.builder) match {
               case Left(error) => aggregate.copy(invalidSql = Some(error))
               case Right(token) =>
                 aggregate.builder.clear()
                 aggregate.builder.append(char)
-
                 aggregate.copy(stateMachine = sm, tokens = aggregate.tokens :+ token)
             }
           }).getOrElse({
@@ -45,17 +46,25 @@ package object sqlParsing {
       case (_, ReadUpdate) => Right(Update)
       case (_, ReadDelete) => Right(Delete)
       case (value, ReadFunction) =>
-        value.toLowerCase match {
+        cleanValue(value).toLowerCase match {
           case "avg" => Right(Avg)
           case "sum" => Right(Sum)
           case _ => Left("This function is not implemented yet. Parsing aborted...")
         }
-      case (value, ReadField) => Right(Field(value))
-      case (value, ReadConstant) => Right(Constant(value))
-      case (value, ReadOperator) => Right(Operator(value(0).toString))
+      case (value, ReadField) => Right(Field(cleanValue(value)))
+      case (value, ReadConstant) => Right(Constant(cleanValue(value)))
+      case (value, ReadOperator) => Right(Operator(cleanValue(value)(0).toString))
       case (_, ReadFrom) => Right(From)
       case (_, ReadWhere) => Right(Where)
     }
+
+  @tailrec
+  private def cleanValue(value: String): String = {
+    val trimmed = value.trim
+
+    if (trimmed.nonEmpty && trimmed(0) == ',') cleanValue(trimmed.substring(1))
+    else trimmed
+  }
 
   private case class ParsingTuple(stateMachine: StateMachine,
                                   tokens: Seq[Token],
