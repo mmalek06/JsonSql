@@ -8,12 +8,12 @@ import scala.annotation.tailrec
 
 package object sqlParsing {
   def tokenize(input: String): (Seq[Token], Option[String]) = {
-    val cleanedInput = input.replace("##json##", "")
+    val cleanedInput = input.replace("##json##", "") + " "
     val seed = getSeed
     val ParsingTuple(_, tokens, _, error) = cleanedInput
       .foldLeft(seed)((aggregate, char) => {
         if (aggregate.invalidSql.isDefined) aggregate
-        else {
+        else
           aggregate.stateMachine.next(char, aggregate.builder).map(sm => {
             getToken(sm.state, aggregate.builder) match {
               case Left(error) => aggregate.copy(invalidSql = Some(error))
@@ -26,7 +26,6 @@ package object sqlParsing {
             aggregate.builder.append(char)
             aggregate
           })
-        }
       })
 
     (tokens, error)
