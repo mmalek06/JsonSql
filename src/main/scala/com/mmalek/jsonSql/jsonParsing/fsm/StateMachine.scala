@@ -5,7 +5,7 @@ import com.mmalek.jsonSql.jsonParsing.fsm.State._
 import scala.collection.immutable.HashMap
 
 class StateMachine(val state: State) {
-  private val transitions: HashMap[State, Seq[(Char, StringBuilder, Seq[State]) => Option[State]]] = HashMap(
+  private val transitions: HashMap[State, Seq[(Char, String, Seq[State]) => Option[State]]] = HashMap(
     State.Initial -> Seq(
       canReadObject,
       canReadArray),
@@ -42,55 +42,54 @@ class StateMachine(val state: State) {
     ))
 
   def next(c: Char, sb: StringBuilder, history: Seq[State]): Option[StateMachine] =
-    transitions(state).flatMap(f => f(c, sb, history)) match {
+    transitions(state).flatMap(f => f(c, sb.toString, history)) match {
       case x :: Nil => Some(new StateMachine(x))
       case _ => None
     }
 
-  private def canReadObject(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObject(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '{') Some(ReadObject) else None
 
-  private def canReadArray(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadArray(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '[') Some(ReadArray) else None
 
-  private def canReadObjectKeyAfterObjectOpen(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObjectKeyAfterObjectOpen(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '"') Some(ReadObjectKey) else None
 
-  private def canReadObjectEndAfterObjectOpen(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObjectEndAfterObjectOpen(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '}') Some(ReadObjectEnd) else None
 
-  private def canReadArrayEndAfterArrayOpen(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadArrayEndAfterArrayOpen(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == ']') Some(ReadArrayEnd) else None
 
-  private def canReadScalarAfterArrayOpen(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadScalarAfterArrayOpen(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c != '{' && c != '[' && c != ']') Some(ReadScalar) else None
 
-  private def canReadScalarAfterObjectKey(c: Char, sb: StringBuilder, history: Seq[State]) =
-    if (isKeyReadFully(sb) && isLastRememberedCharColon(sb) && c != '{' && c != '[' && c != ' ') Some(ReadScalar) else None
+  private def canReadScalarAfterObjectKey(c: Char, valueSoFar: String, history: Seq[State]) =
+    if (isKeyReadFully(valueSoFar) && isLastRememberedCharColon(valueSoFar) && c != '{' && c != '[' && c != ' ') Some(ReadScalar) else None
 
-  private def canReadObjectAfterObjectKey(c: Char, sb: StringBuilder, history: Seq[State]) =
-    if (isKeyReadFully(sb)) canReadObject(c, sb, history) else None
+  private def canReadObjectAfterObjectKey(c: Char, valueSoFar: String, history: Seq[State]) =
+    if (isKeyReadFully(valueSoFar)) canReadObject(c, valueSoFar, history) else None
 
-  private def canReadArrayAfterObjectKey(c: Char, sb: StringBuilder, history: Seq[State]) =
-    if (isKeyReadFully(sb)) canReadArray(c, sb, history) else None
+  private def canReadArrayAfterObjectKey(c: Char, valueSoFar: String, history: Seq[State]) =
+    if (isKeyReadFully(valueSoFar)) canReadArray(c, valueSoFar, history) else None
 
-  private def canReadObjectKeyAfterScalar(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObjectKeyAfterScalar(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == ',') history match {
-      case _ :: x :: _ if x == ReadObjectKey & isScalarReadFully(c, sb) => Some(ReadObjectKey)
+      case _ :: x :: _ if x == ReadObjectKey & isScalarReadFully(c, valueSoFar) => Some(ReadObjectKey)
       case _ => None
     }
     else None
 
-  private def canReadObjectAfterScalar(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObjectAfterScalar(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '{') history match {
       case _ :: xs if isIn(ReadArray, ReadArrayEnd, xs) => Some(ReadObject)
       case _ => None
     }
     else None
 
-  private def canReadObjectEndAfterScalar(c: Char, sb: StringBuilder, history: Seq[State]) =
-    if (c == '}') (sb
-      .toString
+  private def canReadObjectEndAfterScalar(c: Char, valueSoFar: String, history: Seq[State]) =
+    if (c == '}') (valueSoFar
       .replaceAll(" +", "")
       .replaceAll("\"", ""), history) match {
       case (i, _ :: x :: _)
@@ -100,40 +99,40 @@ class StateMachine(val state: State) {
     }
     else None
 
-  private def canReadArrayAfterScalar(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadArrayAfterScalar(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '[') history match {
       case _ :: xs if isIn(ReadArray, ReadArrayEnd, xs) => Some(ReadArray)
       case _ => None
     }
     else None
 
-  private def canReadArrayEndAfterScalar(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadArrayEndAfterScalar(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == ']') history match {
       case _ :: xs if isIn(ReadArray, ReadArrayEnd, xs) => Some(ReadArrayEnd)
       case _ => None
     }
     else None
 
-  private def canReadScalarAfterScalar(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadScalarAfterScalar(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == ',') history match {
-      case _ :: xs if isScalarReadFullyInArray(c, sb, xs) => Some(ReadScalar)
+      case _ :: xs if isScalarReadFullyInArray(c, valueSoFar, xs) => Some(ReadScalar)
       case _ => None
     }
     else None
 
-  private def canReadObjectAfterObjectEnd(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObjectAfterObjectEnd(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '{' && isIn(ReadArray, ReadArrayEnd, history)) Some(ReadObject) else None
 
-  private def canReadObjectKeyAfterSomeEnd(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObjectKeyAfterSomeEnd(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '"' && isIn(ReadObject, ReadObjectEnd, history)) Some(ReadObjectKey) else None
 
-  private def canReadObjectEndAfterSomeEnd(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadObjectEndAfterSomeEnd(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '}' && isIn(ReadObject, ReadObjectEnd, history)) Some(ReadObjectEnd) else None
 
-  private def canReadArrayEndAfterSomeEnd(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadArrayEndAfterSomeEnd(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == ']' && isIn(ReadArray, ReadArrayEnd, history)) Some(ReadArrayEnd) else None
 
-  private def canReadScalarAfterSomeEnd(c: Char, sb: StringBuilder, history: Seq[State]) =
+  private def canReadScalarAfterSomeEnd(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c != '{' && c != '[' && c != ']' && isIn(ReadArray, ReadArrayEnd, history)) Some(ReadScalar) else None
 
   private def isIn(openState: State, closeState: State, history: Seq[State]) =
@@ -146,23 +145,21 @@ class StateMachine(val state: State) {
       else aggregate
     })._1
 
-  private def isKeyReadFully(sb: StringBuilder) =
-    sb
-      .toString
+  private def isKeyReadFully(valueSoFar: String) =
+    valueSoFar
       .replaceAll(" +", "")
       .replaceAll("\\\\\"", "")
       .count(c => c == '"') % 2 == 0
 
-  private def isScalarReadFullyInArray(c: Char, sb: StringBuilder, history: Seq[State]) = {
+  private def isScalarReadFullyInArray(c: Char, valueSoFar: String, history: Seq[State]) = {
     if (!isIn(ReadArray, ReadArrayEnd, history)) false
     else {
-      isScalarReadFully(c, sb)
+      isScalarReadFully(c, valueSoFar)
     }
   }
 
-  private def isScalarReadFully(c: Char, sb: StringBuilder) = {
-    val value = sb
-      .toString
+  private def isScalarReadFully(c: Char, valueSoFar: String) = {
+    val value = valueSoFar
       .replaceAll(" +", "")
       .replaceAll("\\\\\"", "")
 
@@ -170,7 +167,7 @@ class StateMachine(val state: State) {
     else c == ','
   }
 
-  private def isLastRememberedCharColon(sb: StringBuilder) = {
-    sb.toString.replaceAll(" +", "").replaceAll(": +", "").last == ':'
+  private def isLastRememberedCharColon(valueSoFar: String) = {
+    valueSoFar.replaceAll(" +", "").replaceAll(": +", "").last == ':'
   }
 }

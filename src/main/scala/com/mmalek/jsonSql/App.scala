@@ -17,7 +17,7 @@ object App {
       s"""
         SELECT object.nestedKey, object.anotherKey, object.nonExistent
         FROM ##json##
-        WHERE key = 'value'"""
+        WHERE key = 'value' OR something = 1"""
     val data = runJsonSql(query, json)
 
     println("ASDf")

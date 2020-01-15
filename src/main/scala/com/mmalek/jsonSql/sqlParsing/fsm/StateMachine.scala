@@ -15,41 +15,41 @@ class StateMachine(val state: State) {
     State.ReadSelect -> Seq(
       canReadFunction,
       canReadField,
-      canReadConstant
-    ),
+      canReadConstant),
     State.ReadFunction -> Seq(
       canReadFunction,
       canReadField,
       canReadConstant,
-      canReadFrom
-    ),
+      canReadFrom,
+      canReadConjunction),
     State.ReadField -> Seq(
       canReadFunction,
       canReadField,
       canReadConstant,
       canReadOperator,
-      canReadFrom
-    ),
+      canReadFrom,
+      canReadConjunction),
     State.ReadConstant -> Seq(
       canReadFunction,
       canReadField,
       canReadConstant,
       canReadOperator,
-      canReadFrom
-    ),
+      canReadFrom,
+      canReadConjunction),
     State.ReadOperator -> Seq(
       canReadFunction,
       canReadField,
-      canReadConstant
-    ),
+      canReadConstant),
     State.ReadFrom -> Seq(
-      canReadWhere
-    ),
+      canReadWhere),
     State.ReadWhere -> Seq(
       canReadFunction,
       canReadField,
-      canReadConstant
-    ))
+      canReadConstant),
+    State.ReadConjunction -> Seq(
+      canReadFunction,
+      canReadField,
+      canReadConstant))
   private val functions = Set(Sum.name, Avg.name)
   private val operators = Set('-', '+', '/', '*', '%', '=')
 
@@ -101,4 +101,7 @@ class StateMachine(val state: State) {
 
   private def canReadWhere(c: Char, valueSoFar: String) =
     if (valueSoFar.toLowerCase == "where") Some(ReadWhere) else None
+
+  private def canReadConjunction(c: Char, valuesSoFar: String) =
+    if (valuesSoFar.toLowerCase == "and" | valuesSoFar.toLowerCase == "or") Some(ReadConjunction) else None
 }

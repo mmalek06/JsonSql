@@ -51,6 +51,7 @@ package object sqlParsing {
       case (value, ReadOperator) => Right(Operator(cleanValue(value)(0).toString))
       case (_, ReadFrom) => Right(From)
       case (_, ReadWhere) => Right(Where)
+      case (value, ReadConjunction) => getConjunction(value)
     }
 
   private def getFunction(value: String) =
@@ -58,6 +59,13 @@ package object sqlParsing {
       case "avg" => Right(Avg)
       case "sum" => Right(Sum)
       case _ => Left("This function is not implemented yet. Parsing aborted...")
+    }
+
+  private def getConjunction(value: String) =
+    cleanValue(value).toLowerCase match {
+      case "and" => Right(And)
+      case "or" => Right(Or)
+      case _ => Left("This conjunction operator is not implemented yet. Parsing aborted...")
     }
 
   @tailrec

@@ -19,6 +19,8 @@ object Token extends Enum[Token] {
   case object Delete extends Token
 
   case object Where extends Token
+  case object And extends Token
+  case object Or extends Token
 
   case class Json(value: JValue) extends Token
   case class Field(value: String) extends Token
