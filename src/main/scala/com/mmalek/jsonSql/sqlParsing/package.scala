@@ -44,9 +44,9 @@ package object sqlParsing {
       case (_, ReadSelect) => Right(Select)
       case (_, ReadUpdate) => Right(Update)
       case (_, ReadDelete) => Right(Delete)
-      case (value, ReadFunction) => getFunction(value)
-      case (value, ReadField) => Right(Field(cleanValue(value)))
-      case (value, ReadConstant) => Right(Constant(cleanValue(value)))
+      case (value, ReadFunction) => getFunction(removeBrackets(value))
+      case (value, ReadField) => Right(Field(removeBrackets(cleanValue(value))))
+      case (value, ReadConstant) => Right(Constant(removeBrackets(cleanValue(value))))
       case (value, ReadOperator) => Right(Operator(cleanValue(value)(0).toString))
       case (_, ReadFrom) => Right(From)
       case (_, ReadWhere) => Right(Where)
@@ -66,6 +66,17 @@ package object sqlParsing {
       case "or" => Right(Or)
       case _ => Left("This conjunction operator is not implemented yet. Parsing aborted...")
     }
+
+  private def removeBrackets(value: String): String = {
+    val step1 =
+      if (value(0) == '(') value.substring(1)
+      else value
+    val step2 =
+      if (value.last == ')') value.substring(0, value.length - 1)
+      else step1
+
+    step2
+  }
 
   @tailrec
   private def cleanValue(value: String): String = {
