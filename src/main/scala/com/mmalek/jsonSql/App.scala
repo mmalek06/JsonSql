@@ -15,7 +15,7 @@ object App {
     """
     val query =
       s"""
-        SELECT object.nestedKey, object.anotherKey, object.nonExistent
+        SELECT Avg(object.nestedKey + object.anotherKey), object.nestedKey, object.anotherKey, object.nonExistent
         FROM ##json##
         WHERE key = 'value' OR something = 1"""
     val data = runJsonSql(query, json)

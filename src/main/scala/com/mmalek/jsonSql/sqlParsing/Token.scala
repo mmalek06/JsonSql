@@ -8,8 +8,8 @@ sealed abstract class Token(val name: String = "") extends EnumEntry
 object Token extends Enum[Token] {
   val values: IndexedSeq[Token] = findValues
 
-  case object Sum extends Token("sum")
-  case object Avg extends Token("avg")
+  case class Sum() extends Token("sum")
+  case class Avg() extends Token("avg")
 
   case object From extends Token
 

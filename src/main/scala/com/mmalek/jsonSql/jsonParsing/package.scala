@@ -1,5 +1,6 @@
 package com.mmalek.jsonSql
 
+import com.mmalek.jsonSql.jsonParsing.StringExtensions._
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import com.mmalek.jsonSql.jsonParsing.fsm.State._
@@ -69,7 +70,8 @@ package object jsonParsing {
   private def updatePathObjects(currentTreePath: Seq[Node], newObjects: Seq[Node]) =
     currentTreePath
       .foldLeft((List.empty[Node], newObjects))((pair, _) => pair match {
-        case (newPath, updater) => (newPath :+ updater.head, updater.tail) })
+        case (newPath, updater) => (newPath :+ updater.head, updater.tail)
+      })
       ._1
 
   private def getCleanedPropertyKey(sb: StringBuilder) = {
@@ -92,15 +94,7 @@ package object jsonParsing {
   private val getPropertyKey = (name: String) =>
     (arg: CreatorArgument) => JField(name, arg.fold(CreatorArgumentToJValue))
 
-  private val getScalar = (scalar: String) => (_: CreatorArgument) =>
-    if (scalar.forall(_.isDigit)) JInt(BigInt(scalar))
-    else scalar
-      .toDoubleOption
-      .map(d => JDouble(d))
-      .getOrElse(scalar
-        .toBooleanOption
-        .map(b => JBool(b))
-        .getOrElse(if (scalar == "null") JNull else JString(scalar)))
+  private val getScalar = (scalar: String) => (_: CreatorArgument) => scalar.asJValue
 
   private val getObject = (arg: CreatorArgument) =>
     arg.select[JObject] match {
@@ -115,10 +109,10 @@ package object jsonParsing {
     }
 
   object CreatorArgumentToJValue extends Poly1 {
-    implicit val atJString: Case.Aux[JString, JValue] = at { x: JString => x}
-    implicit val atJDouble: Case.Aux[JDouble, JValue] = at { x: JDouble => x}
-    implicit val atJInt: Case.Aux[JInt, JValue] = at { x: JInt => x}
-    implicit val atJBool: Case.Aux[JBool, JValue] = at { x: JBool => x}
+    implicit val atJString: Case.Aux[JString, JValue] = at { x: JString => x }
+    implicit val atJDouble: Case.Aux[JDouble, JValue] = at { x: JDouble => x }
+    implicit val atJInt: Case.Aux[JInt, JValue] = at { x: JInt => x }
+    implicit val atJBool: Case.Aux[JBool, JValue] = at { x: JBool => x }
     implicit val atFields: Case.Aux[JObject, JValue] = at { x: JObject => x }
     implicit val atValues: Case.Aux[JArray, JValue] = at { x: JArray => x }
     implicit val atUnit: Case.Aux[Unit, JValue] = at { _: Unit => JNull }
@@ -129,4 +123,5 @@ package object jsonParsing {
                                   currentTreePath: Seq[Node],
                                   builder: StringBuilder,
                                   statesHistory: Seq[State])
+
 }

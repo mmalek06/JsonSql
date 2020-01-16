@@ -50,7 +50,7 @@ class StateMachine(val state: State) {
       canReadFunction,
       canReadField,
       canReadConstant))
-  private val functions = Set(Sum.name, Avg.name)
+  private val functions = Set(Sum().name, Avg().name)
   private val operators = Set('-', '+', '/', '*', '%', '=')
 
   def next(c: Char, sb: StringBuilder): Option[StateMachine] =
@@ -75,7 +75,7 @@ class StateMachine(val state: State) {
     if(valueSoFar.nonEmpty &&
        valueSoFar != "," &&
        valueSoFar(0) != '"' &&
-       (c == ' ' || c == '(' || operators.contains(c)) && functions.contains(valueSoFar)) Some(ReadFunction)
+       (c == ' ' || c == '(' || operators.contains(c)) && functions.contains(valueSoFar.toLowerCase)) Some(ReadFunction)
     else None
 
   private def canReadField(c: Char, valueSoFar: String) =

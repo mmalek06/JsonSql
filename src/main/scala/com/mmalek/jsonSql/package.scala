@@ -1,8 +1,9 @@
 package com.mmalek
 
+import com.mmalek.jsonSql.jsonParsing.StringExtensions._
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JObject, JValue}
 import com.mmalek.jsonSql.jsonParsing.getJson
-import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field, From, Json, Operator, Select, Where}
+import com.mmalek.jsonSql.sqlParsing.Token._
 import com.mmalek.jsonSql.sqlParsing.{Token, tokenize}
 
 package object jsonSql {
@@ -62,8 +63,7 @@ package object jsonSql {
   private def getValues(token: Token, value: JValue): Option[(String, Seq[Option[JValue]])] =
     token match {
       case t: Field => Some(t.value -> walkDown(t.value.split("\\."), value))
-//      case t: Constant => Some(t.value -> Seq(Some(JValue(t.value))))
-//      case t: Operator => Some(t.value)
+      case t: Constant => Some(t.value -> Seq(Some(t.value.asJValue)))
       case _ => None
     }
 
@@ -75,7 +75,7 @@ package object jsonSql {
       case _ => None
     } match {
       case Nil => json
-      case x => json
+      case _ => json
     }
 
   private def walkDown(path: Seq[String], json: JValue): Seq[Option[JValue]] =
@@ -94,4 +94,5 @@ package object jsonSql {
 
   private case class ActionsTuple(currentToken: Option[Token],
                                   actions: Map[Token, Seq[Token]])
+
 }

@@ -55,8 +55,8 @@ package object sqlParsing {
 
   private def getFunction(value: String) =
     cleanValue(value).toLowerCase match {
-      case "avg" => Right(Avg)
-      case "sum" => Right(Sum)
+      case "avg" => Right(Avg())
+      case "sum" => Right(Sum())
       case _ => Left("This function is not implemented yet. Parsing aborted...")
     }
 
