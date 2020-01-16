@@ -72,7 +72,7 @@ package object sqlParsing {
       if (value(0) == '(') value.substring(1)
       else value
     val step2 =
-      if (value.last == ')') value.substring(0, value.length - 1)
+      if (step1.last == ')') step1.substring(0, step1.length - 1)
       else step1
 
     step2
