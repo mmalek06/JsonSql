@@ -64,11 +64,13 @@ class StateMachine(val state: State) {
     val cleanValue =
       if (trimmedVal.startsWith(",")) trimmedVal.substring(1).trim
       else trimmedVal
-    val mapped = transitions(state).flatMap(f => f(c, cleanValue))
+    val transition = transitions(state).foldLeft(Option.empty[State])((aggregate, f) => aggregate match {
+      case None => f(c, cleanValue)
+      case x => x
+    })
 
-    mapped match {
-      case x :: _ =>
-        Some(new StateMachine(x))
+    transition match {
+      case Some(value) => Some(new StateMachine(value))
       case _ => None
     }
   }
@@ -86,17 +88,10 @@ class StateMachine(val state: State) {
     if (valueSoFar.toLowerCase == "select") Some(ReadSelect) else None
 
   private def canReadFunction(c: Char, valueSoFar: String) =
-    if(valueSoFar.nonEmpty &&
-       (c == ' ' || c == '(' || operators.contains(c)) &&
-       functions.contains(valueSoFar.toLowerCase)) Some(ReadFunction)
-    else None
+    if(valueSoFar.nonEmpty && (c == ' ' || c == '(' || operators.contains(c)) && functions.contains(valueSoFar.toLowerCase)) Some(ReadFunction) else None
 
   private def canReadField(c: Char, valueSoFar: String) =
-    if(valueSoFar.length > 2 &&
-       valueSoFar(0) == '"' &&
-       valueSoFar.last == '"')
-      Some(ReadField)
-    else None
+    if(valueSoFar.length > 2 && valueSoFar(0) == '"' && valueSoFar.last == '"') Some(ReadField) else None
 
   private def canReadConstant(c: Char, valueSoFar: String) =
     if ((valueSoFar.nonEmpty && (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit))) ||
@@ -116,7 +111,5 @@ class StateMachine(val state: State) {
     if (valuesSoFar.toLowerCase == "and" | valuesSoFar.toLowerCase == "or") Some(ReadConjunction) else None
 
   private def canReadBracket(c: Char, valuesSoFar: String) =
-    if (valuesSoFar.length == 1 && (valuesSoFar(0) == '(' || valuesSoFar(0) == ')'))
-      Some(ReadBracket)
-    else None
+    if (valuesSoFar.length == 1 && (valuesSoFar(0) == '(' || valuesSoFar(0) == ')')) Some(ReadBracket) else None
 }

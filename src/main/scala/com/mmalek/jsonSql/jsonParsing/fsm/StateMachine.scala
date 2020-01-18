@@ -41,11 +41,17 @@ class StateMachine(val state: State) {
       canReadObjectEndAfterSomeEnd
     ))
 
-  def next(c: Char, sb: StringBuilder, history: Seq[State]): Option[StateMachine] =
-    transitions(state).flatMap(f => f(c, sb.toString, history)) match {
-      case x :: Nil => Some(new StateMachine(x))
+  def next(c: Char, sb: StringBuilder, history: Seq[State]): Option[StateMachine] = {
+    val transition = transitions(state).foldLeft(Option.empty[State])((aggregate, f) => aggregate match {
+      case None => f(c, sb.toString, history)
+      case x => x
+    })
+
+    transition match {
+      case Some(value) => Some(new StateMachine(value))
       case _ => None
     }
+  }
 
   private def canReadObject(c: Char, valueSoFar: String, history: Seq[State]) =
     if (c == '{') Some(ReadObject) else None
