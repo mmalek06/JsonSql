@@ -8,9 +8,10 @@ import com.mmalek.jsonSql.sqlParsing.Token._
 class SelectExecutor(actions: Map[Token, Seq[Token]]) {
   def select(json: JValue): Map[String, Seq[Option[JValue]]] = {
     val tokens = actions(Select)
+    val info = getTokensInfo(tokens)
 
-    if (willFold(tokens)) FoldingStrategy.run(tokens, json)
-    else MappingStrategy.run(tokens, json)
+    if (info.hasFunctions || info.hasOperators) FoldingStrategy(tokens, json, info)
+    else MappingStrategy(tokens, json)
   }
 
   def from(): Option[Json] =
@@ -22,10 +23,11 @@ class SelectExecutor(actions: Map[Token, Seq[Token]]) {
   def where(json: JValue): Option[JValue] =
     actions.get(Where).map(filterJson(_, json))
 
-  private def willFold(tokens: Seq[Token]) =
-    tokens.exists(t => t match {
-      case _: Operator | _: Avg | _: Sum => true
-      case _ => false
+  private def getTokensInfo(tokens: Seq[Token]) =
+    tokens.foldLeft(TokensInfo(hasOperators = false, hasFunctions = false))((aggregate, t) => t match {
+      case _: Operator => aggregate.copy(hasOperators = true)
+      case _: Sum | _: Avg | _: Median | _: Count | _: Max | _: Min => aggregate.copy(hasFunctions = true)
+      case _ => aggregate
     })
 
   private def filterJson(filters: Seq[Token], json: JValue): JValue =

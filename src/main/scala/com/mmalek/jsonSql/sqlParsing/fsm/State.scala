@@ -19,4 +19,5 @@ object State extends Enum[State] {
   case object ReadFrom extends State
   case object ReadWhere extends State
   case object ReadConjunction extends State
+  case object ReadBracket extends State
 }

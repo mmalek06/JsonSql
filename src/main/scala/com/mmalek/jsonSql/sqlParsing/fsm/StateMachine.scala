@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql.sqlParsing.fsm
 
-import com.mmalek.jsonSql.sqlParsing.Token.{Avg, Sum}
+import com.mmalek.jsonSql.sqlParsing.Token._
 import com.mmalek.jsonSql.sqlParsing.fsm.State._
 
 import scala.collection.immutable.HashMap
@@ -13,16 +13,15 @@ class StateMachine(val state: State) {
       canReadUpdate,
       canReadDelete),
     State.ReadSelect -> Seq(
+      canReadBracket,
       canReadFunction,
       canReadField,
       canReadConstant),
     State.ReadFunction -> Seq(
-      canReadFunction,
-      canReadField,
-      canReadConstant,
-      canReadFrom,
-      canReadConjunction),
+      canReadBracket,
+      canReadField),
     State.ReadField -> Seq(
+      canReadBracket,
       canReadFunction,
       canReadField,
       canReadConstant,
@@ -30,6 +29,7 @@ class StateMachine(val state: State) {
       canReadFrom,
       canReadConjunction),
     State.ReadConstant -> Seq(
+      canReadBracket,
       canReadFunction,
       canReadField,
       canReadConstant,
@@ -37,6 +37,7 @@ class StateMachine(val state: State) {
       canReadFrom,
       canReadConjunction),
     State.ReadOperator -> Seq(
+      canReadBracket,
       canReadFunction,
       canReadField,
       canReadConstant),
@@ -49,15 +50,28 @@ class StateMachine(val state: State) {
     State.ReadConjunction -> Seq(
       canReadFunction,
       canReadField,
-      canReadConstant))
-  private val functions = Set(Sum().name, Avg().name)
-  private val operators = Set('-', '+', '/', '*', '%', '=')
+      canReadConstant),
+    State.ReadBracket -> Seq(
+      canReadFunction,
+      canReadField,
+      canReadConstant,
+      canReadOperator))
+  private val functions = Set(Sum().name, Avg().name, Median().name, Count().name, Max().name, Min().name)
+  private val operators = Set('-', '+', '/', '*', '%', '=', '!')
 
-  def next(c: Char, sb: StringBuilder): Option[StateMachine] =
-    transitions(state).flatMap(f => f(c, sb.toString.trim)) match {
-      case x :: Nil => Some(new StateMachine(x))
+  def next(c: Char, sb: StringBuilder): Option[StateMachine] = {
+    val trimmedVal = sb.toString.trim
+    val cleanValue =
+      if (trimmedVal.startsWith(",")) trimmedVal.substring(1).trim
+      else trimmedVal
+    val mapped = transitions(state).flatMap(f => f(c, cleanValue))
+
+    mapped match {
+      case x :: _ =>
+        Some(new StateMachine(x))
       case _ => None
     }
+  }
 
   private def canReadInsert(c: Char, valueSoFar: String) =
     if (valueSoFar.toLowerCase == "insert") Some(ReadInsert) else None
@@ -73,24 +87,20 @@ class StateMachine(val state: State) {
 
   private def canReadFunction(c: Char, valueSoFar: String) =
     if(valueSoFar.nonEmpty &&
-       valueSoFar != "," &&
-       valueSoFar(0) != '"' &&
-       (c == ' ' || c == '(' || operators.contains(c)) && functions.contains(valueSoFar.toLowerCase)) Some(ReadFunction)
+       (c == ' ' || c == '(' || operators.contains(c)) &&
+       functions.contains(valueSoFar.toLowerCase)) Some(ReadFunction)
     else None
 
   private def canReadField(c: Char, valueSoFar: String) =
-    if(valueSoFar.nonEmpty &&
-       valueSoFar != "," &&
-       !functions.contains(valueSoFar.toLowerCase) &&
-       !valueSoFar.forall(_.isDigit) &&
-       (c == ' ' || c == ',' || operators.contains(c))) Some(ReadField)
+    if(valueSoFar.length > 2 &&
+       valueSoFar(0) == '"' &&
+       valueSoFar.last == '"')
+      Some(ReadField)
     else None
 
   private def canReadConstant(c: Char, valueSoFar: String) =
-    if (valueSoFar.nonEmpty &&
-        valueSoFar != "," &&
-        (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit) || valueSoFar(0) == '"') &&
-        (c == ' ' || c == ',' || operators.contains(c))) Some(ReadConstant)
+    if ((valueSoFar.nonEmpty && (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit))) ||
+        (valueSoFar.length > 2 && (valueSoFar(0) == '\'' && valueSoFar.last == '\''))) Some(ReadConstant)
     else None
 
   private def canReadOperator(c: Char, valueSoFar: String) =
@@ -104,4 +114,9 @@ class StateMachine(val state: State) {
 
   private def canReadConjunction(c: Char, valuesSoFar: String) =
     if (valuesSoFar.toLowerCase == "and" | valuesSoFar.toLowerCase == "or") Some(ReadConjunction) else None
+
+  private def canReadBracket(c: Char, valuesSoFar: String) =
+    if (valuesSoFar.length == 1 && (valuesSoFar(0) == '(' || valuesSoFar(0) == ')'))
+      Some(ReadBracket)
+    else None
 }

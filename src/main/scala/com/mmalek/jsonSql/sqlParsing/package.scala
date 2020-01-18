@@ -47,10 +47,11 @@ package object sqlParsing {
       case (value, ReadFunction) => getFunction(removeBrackets(value))
       case (value, ReadField) => Right(Field(removeBrackets(cleanValue(value))))
       case (value, ReadConstant) => Right(Constant(removeBrackets(cleanValue(value))))
-      case (value, ReadOperator) => Right(Operator(cleanValue(value)(0).toString))
+      case (value, ReadOperator) => Right(Operator(removeBrackets(cleanValue(value))(0).toString))
       case (_, ReadFrom) => Right(From)
       case (_, ReadWhere) => Right(Where)
       case (value, ReadConjunction) => getConjunction(value)
+      case (value, ReadBracket) => getBracket(value)
     }
 
   private def getFunction(value: String) =
@@ -65,6 +66,13 @@ package object sqlParsing {
       case "and" => Right(And)
       case "or" => Right(Or)
       case _ => Left("This conjunction operator is not implemented yet. Parsing aborted...")
+    }
+
+  private def getBracket(value: String) =
+    cleanValue(value) match {
+      case "(" => Right(Bracket('('))
+      case ")" => Right(Bracket(')'))
+      case _ => Left("What kind of bracket is that?!")
     }
 
   private def removeBrackets(value: String): String = {

@@ -10,6 +10,10 @@ object Token extends Enum[Token] {
 
   case class Sum() extends Token("sum")
   case class Avg() extends Token("avg")
+  case class Median() extends Token("median")
+  case class Count() extends Token("count")
+  case class Max() extends Token("max")
+  case class Min() extends Token("min")
 
   case object From extends Token
 
@@ -23,6 +27,9 @@ object Token extends Enum[Token] {
   case object Or extends Token
 
   case class Json(value: JValue) extends Token
+  case class Bracket(value: Char) extends Token {
+    val isOpening: Boolean = value == '('
+  }
   case class Field(value: String) extends Token
   case class Constant(value: String) extends Token
   case class Operator(value: String) extends Token

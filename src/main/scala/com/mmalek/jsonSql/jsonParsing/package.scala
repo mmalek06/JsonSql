@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql
 
-import com.mmalek.jsonSql.jsonParsing.StringExtensions._
+import com.mmalek.jsonSql.jsonParsing.StringOps._
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import com.mmalek.jsonSql.jsonParsing.fsm.State._
