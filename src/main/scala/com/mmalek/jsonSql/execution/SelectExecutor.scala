@@ -1,6 +1,7 @@
 package com.mmalek.jsonSql.execution
 
-import com.mmalek.jsonSql.execution.selectStrategies.{FoldingStrategy, MappingStrategy}
+import com.mmalek.jsonSql.execution.selectStrategies.MappingStrategy
+import com.mmalek.jsonSql.execution.selectStrategies.folding.FoldingStrategy
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
@@ -26,7 +27,7 @@ class SelectExecutor(actions: Map[Token, Seq[Token]]) {
   private def getTokensInfo(tokens: Seq[Token]) =
     tokens.foldLeft(TokensInfo(hasOperators = false, hasFunctions = false))((aggregate, t) => t match {
       case _: Operator => aggregate.copy(hasOperators = true)
-      case _: Sum | _: Avg | _: Median | _: Count | _: Max | _: Min => aggregate.copy(hasFunctions = true)
+      case x if Token.functions.contains(x) => aggregate.copy(hasFunctions = true)
       case _ => aggregate
     })
 

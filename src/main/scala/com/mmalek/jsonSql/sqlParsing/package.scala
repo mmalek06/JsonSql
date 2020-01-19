@@ -54,12 +54,14 @@ package object sqlParsing {
       case (value, ReadBracket) => getBracket(value)
     }
 
-  private def getFunction(value: String) =
-    cleanValue(value).toLowerCase match {
-      case "avg" => Right(Avg())
-      case "sum" => Right(Sum())
-      case _ => Left("This function is not implemented yet. Parsing aborted...")
+  private def getFunction(value: String) = {
+    val cleanVal = cleanValue(value).toLowerCase
+
+    Token.functions.find(t => t.name == cleanVal) match {
+      case Some(t) => Right(t)
+      case None => Left("This function is not implemented yet. Parsing aborted...")
     }
+  }
 
   private def getConjunction(value: String) =
     cleanValue(value).toLowerCase match {
@@ -70,8 +72,8 @@ package object sqlParsing {
 
   private def getBracket(value: String) =
     cleanValue(value) match {
-      case "(" => Right(Bracket('('))
-      case ")" => Right(Bracket(')'))
+      case "(" => Right(Bracket("("))
+      case ")" => Right(Bracket(")"))
       case _ => Left("What kind of bracket is that?!")
     }
 

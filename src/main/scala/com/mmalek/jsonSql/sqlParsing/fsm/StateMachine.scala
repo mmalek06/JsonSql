@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql.sqlParsing.fsm
 
-import com.mmalek.jsonSql.sqlParsing.Token._
+import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.fsm.State._
 
 import scala.collection.immutable.HashMap
@@ -56,7 +56,6 @@ class StateMachine(val state: State) {
       canReadField,
       canReadConstant,
       canReadOperator))
-  private val functions = Set(Sum().name, Avg().name, Median().name, Count().name, Max().name, Min().name)
   private val operators = Set('-', '+', '/', '*', '%', '=', '!')
 
   def next(c: Char, sb: StringBuilder): Option[StateMachine] = {
@@ -87,8 +86,11 @@ class StateMachine(val state: State) {
   private def canReadSelect(c: Char, valueSoFar: String) =
     if (valueSoFar.toLowerCase == "select") Some(ReadSelect) else None
 
-  private def canReadFunction(c: Char, valueSoFar: String) =
-    if(valueSoFar.nonEmpty && (c == ' ' || c == '(' || operators.contains(c)) && functions.contains(valueSoFar.toLowerCase)) Some(ReadFunction) else None
+  private def canReadFunction(c: Char, valueSoFar: String) = {
+    val lowercasedValue = valueSoFar.toLowerCase
+
+    if(valueSoFar.nonEmpty && (c == ' ' || c == '(' || operators.contains(c)) && Token.functions.exists(t => t.name == lowercasedValue)) Some(ReadFunction) else None
+  }
 
   private def canReadField(c: Char, valueSoFar: String) =
     if(valueSoFar.length > 2 && valueSoFar(0) == '"' && valueSoFar.last == '"') Some(ReadField) else None
