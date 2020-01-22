@@ -5,13 +5,14 @@ import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token.{Bracket, Default, Field, Operator}
 
-import scala.collection.mutable
-
 object FoldingStrategy {
   def apply(tokens: Seq[Token], json: JValue, tokensInfo: TokensInfo): Map[String, Seq[Option[JValue]]] = {
     val partitions = partition(tokens)
-    val arithmeticPartitions = getArithmeticPartitions(partitions)
-    val rnpPartitions = arithmeticPartitions.map(p => Infix2RpnConverter.convert(p))
+    val groupedPartitions = groupPartitions(partitions)
+    val rnpPartitions = groupedPartitions.arithmetic.map(p => Infix2RpnConverter.convert(p))
+    val runnablePartitions = groupedPartitions.copy(arithmetic = rnpPartitions)
+    val arithmeticResults = runnablePartitions.arithmetic.map(runOps(_))
+    val otherResults = runnablePartitions.other.map(runOps(_))
 
     ???
   }
@@ -36,34 +37,27 @@ object FoldingStrategy {
       }).partitionedTokens
   }
 
-  private def getArithmeticPartitions(partitions: Seq[Seq[Token]]) =
-    partitions.filter(p => p.exists {
+  private def groupPartitions(partitions: Seq[Seq[Token]]) =
+    partitions
+      .foldLeft(PartitionInfo(Nil, Nil))((aggregate, p) =>
+        if (hasOperator(p)) aggregate.copy(arithmetic = aggregate.arithmetic :+ p)
+        else aggregate.copy(other = aggregate.other :+ p))
+
+  private def hasOperator(partition: Seq[Token]) =
+    partition.exists {
       case _: Operator => true
       case _ => false
-    })
+    }
+
+  private def runOps(value: Seq[Token]) =
+    ???
 
   private def isFunction(x: Token) =
     Token.functions.exists(t => t.name == x.name)
 
-  private def makeRnp(tokens: Seq[Token]) = {
-    val prededence = getPrecedence
-    val queue = mutable.Queue[Token]()
-    val s = mutable.Stack[Token]()
-  }
-
-  private def getPrecedence =
-    Map[String, Int](
-      "/" -> 5,
-      "*" -> 5,
-      "%" -> 5,
-      "+" -> 4,
-      "-" -> 4,
-      "(" -> 0)
-
-  private def rnp(tokens: Seq[Token]) = {
-
-  }
-
   private case class PartitioningTuple(partitionedTokens: Seq[Seq[Token]],
                                        previousToken: Token)
+
+  private case class PartitionInfo(arithmetic: Seq[Seq[Token]],
+                                   other: Seq[Seq[Token]])
 }
