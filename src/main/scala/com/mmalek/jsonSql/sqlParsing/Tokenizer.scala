@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql
+package com.mmalek.jsonSql.sqlParsing
 
 import com.mmalek.jsonSql.sqlParsing.Token._
 import com.mmalek.jsonSql.sqlParsing.fsm.State._
@@ -6,7 +6,7 @@ import com.mmalek.jsonSql.sqlParsing.fsm.{State, StateMachine}
 
 import scala.annotation.tailrec
 
-package object sqlParsing {
+object Tokenizer {
   def tokenize(input: String): (Seq[Token], Option[String]) = {
     val cleanedInput = input.replace("##json##", "") + " "
     val seed = getSeed
@@ -16,8 +16,9 @@ package object sqlParsing {
         else
           aggregate.stateMachine.next(char, aggregate.builder).map(sm => {
             getToken(sm.state, aggregate.builder) match {
-              case Left(error) => aggregate.copy(invalidSql = Some(error))
-              case Right(token) =>
+              case None => aggregate
+              case Some(Left(error)) => aggregate.copy(invalidSql = Some(error))
+              case Some(Right(token)) =>
                 aggregate.builder.clear()
                 aggregate.builder.append(char)
                 aggregate.copy(stateMachine = sm, tokens = aggregate.tokens :+ token)
@@ -40,18 +41,19 @@ package object sqlParsing {
 
   private def getToken(state: State, builder: StringBuilder) =
     (builder.toString.trim, state) match {
-      case (_, ReadInsert) => Right(Insert)
-      case (_, ReadSelect) => Right(Select)
-      case (_, ReadUpdate) => Right(Update)
-      case (_, ReadDelete) => Right(Delete)
-      case (value, ReadFunction) => getFunction(removeBrackets(value))
-      case (value, ReadField) => Right(Field(removeBrackets(cleanValue(value))))
-      case (value, ReadConstant) => Right(Constant(removeBrackets(cleanValue(value))))
-      case (value, ReadOperator) => Right(Operator(removeBrackets(cleanValue(value))(0).toString))
-      case (_, ReadFrom) => Right(From)
-      case (_, ReadWhere) => Right(Where)
-      case (value, ReadConjunction) => getConjunction(value)
-      case (value, ReadBracket) => getBracket(value)
+      case (_, Initial) => None
+      case (_, ReadInsert) => Some(Right(Insert))
+      case (_, ReadSelect) => Some(Right(Select))
+      case (_, ReadUpdate) => Some(Right(Update))
+      case (_, ReadDelete) => Some(Right(Delete))
+      case (value, ReadFunction) => Some(getFunction(removeBrackets(value)))
+      case (value, ReadField) => Some(Right(Field(removeBrackets(cleanValue(value)))))
+      case (value, ReadConstant) => Some(Right(Constant(removeBrackets(cleanValue(value)))))
+      case (value, ReadOperator) => Some(Right(Operator(removeBrackets(cleanValue(value))(0).toString)))
+      case (_, ReadFrom) => Some(Right(From))
+      case (_, ReadWhere) => Some(Right(Where))
+      case (value, ReadConjunction) => Some(getConjunction(value))
+      case (value, ReadBracket) => Some(getBracket(value))
     }
 
   private def getFunction(value: String) = {

@@ -2,14 +2,14 @@ package com.mmalek
 
 import com.mmalek.jsonSql.execution.SelectExecutor
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
-import com.mmalek.jsonSql.jsonParsing.getJson
+import com.mmalek.jsonSql.jsonParsing.JsonParser
 import com.mmalek.jsonSql.sqlParsing.Token._
-import com.mmalek.jsonSql.sqlParsing.{Token, tokenize}
+import com.mmalek.jsonSql.sqlParsing.{Token, Tokenizer}
 
 package object jsonSql {
   def runJsonSql(rawSql: String, rawJson: String): Either[String, Option[Map[String, Seq[Option[JValue]]]]] = {
-    val json = getJson(rawJson)
-    val (tokens, error) = tokenize(rawSql)
+    val json = JsonParser.getJson(rawJson)
+    val (tokens, error) = Tokenizer.tokenize(rawSql)
 
     error match {
       case Some(e) => Left(e)

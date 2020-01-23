@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql
+package com.mmalek.jsonSql.jsonParsing
 
 import com.mmalek.jsonSql.jsonParsing.StringOps._
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
@@ -9,7 +9,7 @@ import shapeless.Poly1
 
 import scala.language.postfixOps
 
-package object jsonParsing {
+object JsonParser {
   def getJson(input: String): JValue = {
     val seed = getSeed
     val ParsingTuple(_, tree, _, _, _) = Normalizer
