@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql.execution.selectStrategies
 
-import com.mmalek.jsonSql.execution.JValueOps._
+import com.mmalek.jsonSql.execution.extensions.JValueOps._
 import com.mmalek.jsonSql.jsonParsing.StringOps._
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token

@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.execution
+package com.mmalek.jsonSql.execution.extensions
 
 object StringOps {
   implicit class SqlParsingStringExtensions(val x: String) {

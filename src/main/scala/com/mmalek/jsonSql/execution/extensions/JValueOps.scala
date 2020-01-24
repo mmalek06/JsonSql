@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.execution
+package com.mmalek.jsonSql.execution.extensions
 
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JObject, JValue}
 
