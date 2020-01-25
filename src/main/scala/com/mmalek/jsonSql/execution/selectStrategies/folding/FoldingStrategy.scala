@@ -1,15 +1,18 @@
 package com.mmalek.jsonSql.execution.selectStrategies.folding
 
 import com.mmalek.jsonSql.execution.TokensInfo
+import com.mmalek.jsonSql.execution.extensions.StringOps._
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.{AddOperator, AvgFunction}
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
-import com.mmalek.jsonSql.sqlParsing.Token.{Bracket, Default, Field, Operator}
+import com.mmalek.jsonSql.sqlParsing.Token._
+import shapeless.Coproduct
 
 object FoldingStrategy {
-  private val runnables = Seq(
-    new AddOperator,
+  private val operators = Seq(
+    new AddOperator)
+  private val functions = Seq(
     new AvgFunction)
 
   def apply(tokens: Seq[Token], json: JValue, tokensInfo: TokensInfo): Map[String, Seq[Option[JValue]]] = {
@@ -17,8 +20,8 @@ object FoldingStrategy {
     val groupedPartitions = groupPartitions(partitions)
     val rnpPartitions = groupedPartitions.arithmetic.map(p => Infix2RpnConverter.convert(p))
     val runnablePartitions = groupedPartitions.copy(arithmetic = rnpPartitions)
-    val arithmeticResults = runnablePartitions.arithmetic.map(runOps(_))
-    val otherResults = runnablePartitions.other.map(runOps(_))
+    val arithmeticResults = runnablePartitions.arithmetic.map(runOps)
+    val otherResults = runnablePartitions.other.map(runOps)
 
     ???
   }
@@ -55,13 +58,35 @@ object FoldingStrategy {
       case _ => false
     }
 
-  private def runOps(tokens: Seq[Token]) = ???
-//    tokens.foldLeft(Seq.empty[RunnableArgument]) {
-//      case
-//    }
+  private def runOps(tokens: Seq[Token]) =
+    tokens.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((aggOrError, t) => (aggOrError, t) match {
+      case (Right(aggregate), x: Constant) => getConstant(aggregate, x)
+      case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
+      case (Right(aggregate), x: Operator) => runOperator(aggregate, x)
+      case (Right(aggregate), x: Function) => runFunction(aggregate, x)
+      case _ => aggOrError
+    })
+
+  private def getConstant(aggregate: Seq[RunnableArgument], const: Constant) =
+    if (const.value.isNumber) Right(aggregate :+ Coproduct[RunnableArgument](BigDecimal(const.value)))
+    else Right(aggregate :+ Coproduct[RunnableArgument](const.value))
+
+  private def runOperator(aggregate: Seq[RunnableArgument], x: Operator) =
+    operators
+      .find(_.canRun(x.value, aggregate))
+      .flatMap(_.run(aggregate))
+      .map(value => Right(aggregate :+ value))
+      .getOrElse(Left(s"Couldn't run ${x.value} operator, because the input was in bad format. Aborting..."))
+
+  private def runFunction(aggregate: Seq[RunnableArgument], x: Function) =
+    functions
+      .find(_.canRun(x.name, aggregate))
+      .flatMap(_.run(aggregate, null))
+      .map(value => Right(aggregate :+ value))
+      .getOrElse(Left(s"Couldn't run ${x.name} function, because the input was in bad format. Aborting..."))
 
   private def isFunction(x: Token) =
-    Token.functions.exists(t => t.name == x.name)
+    Token.functions.contains(x.name)
 
   private case class PartitionsTuple(partitionedTokens: Seq[Seq[Token]],
                                      previousToken: Token)

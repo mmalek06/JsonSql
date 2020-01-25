@@ -50,8 +50,7 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
   private def getArgument(values: Seq[JValue]) =
     values match {
       case (x: JString) :: Nil => Coproduct[CreatorArgument](x)
-      case (x: JDouble) :: Nil => Coproduct[CreatorArgument](x)
-      case (x: JInt) :: Nil => Coproduct[CreatorArgument](x)
+      case (x: JNumber) :: Nil => Coproduct[CreatorArgument](x)
       case (x: JBool) :: Nil => Coproduct[CreatorArgument](x)
       case (x: JObject) :: Nil => Coproduct[CreatorArgument](x)
       case (x: JArray) :: Nil => Coproduct[CreatorArgument](x)

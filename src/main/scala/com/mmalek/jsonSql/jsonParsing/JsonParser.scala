@@ -110,8 +110,7 @@ object JsonParser {
 
   object CreatorArgumentToJValue extends Poly1 {
     implicit val atJString: Case.Aux[JString, JValue] = at { x: JString => x }
-    implicit val atJDouble: Case.Aux[JDouble, JValue] = at { x: JDouble => x }
-    implicit val atJInt: Case.Aux[JInt, JValue] = at { x: JInt => x }
+    implicit val atJInt: Case.Aux[JNumber, JValue] = at { x: JNumber => x }
     implicit val atJBool: Case.Aux[JBool, JValue] = at { x: JBool => x }
     implicit val atFields: Case.Aux[JObject, JValue] = at { x: JObject => x }
     implicit val atValues: Case.Aux[JArray, JValue] = at { x: JArray => x }

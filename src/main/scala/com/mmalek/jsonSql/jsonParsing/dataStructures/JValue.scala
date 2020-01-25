@@ -23,14 +23,9 @@ case class JString(s: String) extends JValue {
   override def values: String = s
 }
 
-case class JDouble(num: Double) extends JValue {
-  override type Values = Double
-  override def values: Values = num
-}
-
-case class JInt(num: BigInt) extends JValue {
-  override type Values = BigInt
-  override def values: BigInt = num
+case class JNumber(num: BigDecimal) extends JValue {
+  override type Values = BigDecimal
+  override def values: BigDecimal = num
 }
 
 case class JBool(value: Boolean) extends JValue {

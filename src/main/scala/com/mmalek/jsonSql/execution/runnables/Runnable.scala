@@ -5,5 +5,5 @@ import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 
 trait Runnable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean
-  def run(symbol: String, args: Seq[RunnableArgument], json: JValue): Option[RunnableArgument]
+  def run(args: Seq[RunnableArgument], json: Option[JValue] = None): Option[RunnableArgument]
 }

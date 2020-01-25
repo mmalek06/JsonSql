@@ -9,7 +9,7 @@ class AddOperator extends Runnable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean =
     symbol == "+" && args.length == 2 && (args.forall(_.fold(IsNumeric)) || args.forall(_.fold(IsString)))
 
-  def run(symbol: String, args: Seq[RunnableArgument], json: JValue): Option[RunnableArgument] = {
+  def run(args: Seq[RunnableArgument], json: Option[JValue] = None): Option[RunnableArgument] = {
     if (args.forall(_.fold(IsNumeric))) {
       val num1 = args.head.fold(RunnableArgumentToNumber)
       val num2 = args.last.fold(RunnableArgumentToNumber)
@@ -33,27 +33,23 @@ class AddOperator extends Runnable {
     implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: BigDecimal => true }
     implicit val atString: Case.Aux[String, Boolean] = at { _: String => false }
     implicit val atField: Case.Aux[Field, Boolean] = at { _: Field => false }
-    implicit val atSeq: Case.Aux[Seq[Option[JValue]], Boolean] = at { _: Seq[Option[JValue]] => false }
   }
 
   object IsString extends Poly1 {
     implicit val atString: Case.Aux[String, Boolean] = at { _: String => true }
     implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: BigDecimal => false }
     implicit val atField: Case.Aux[Field, Boolean] = at { _: Field => false }
-    implicit val atSeq: Case.Aux[Seq[Option[JValue]], Boolean] = at { _: Seq[Option[JValue]] => false }
   }
 
   object RunnableArgumentToNumber extends Poly1 {
     implicit val atDouble: Case.Aux[BigDecimal, Option[BigDecimal]] = at { x: BigDecimal => Some(x) }
     implicit val atString: Case.Aux[String, Option[BigDecimal]] = at { _: String => None }
     implicit val atField: Case.Aux[Field, Option[BigDecimal]] = at { _: Field => None }
-    implicit val atSeq: Case.Aux[Seq[Option[JValue]], Option[BigDecimal]] = at { _: Seq[Option[JValue]] => None }
   }
 
   object RunnableArgumentToString extends Poly1 {
     implicit val atString: Case.Aux[String, Option[String]] = at { x: String => Some(x) }
     implicit val atDouble: Case.Aux[BigDecimal, Option[String]] = at { _: BigDecimal => None }
     implicit val atField: Case.Aux[Field, Option[String]] = at { _: Field => None }
-    implicit val atSeq: Case.Aux[Seq[Option[JValue]], Option[String]] = at { _: Seq[Option[JValue]] => None }
   }
 }

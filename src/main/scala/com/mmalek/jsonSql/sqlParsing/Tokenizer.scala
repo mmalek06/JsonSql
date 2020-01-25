@@ -59,8 +59,8 @@ object Tokenizer {
   private def getFunction(value: String) = {
     val cleanVal = cleanValue(value).toLowerCase
 
-    Token.functions.find(t => t.name == cleanVal) match {
-      case Some(t) => Right(t)
+    Token.functions.find(t => t == cleanVal) match {
+      case Some(t) => Right(Function(t))
       case None => Left("This function is not implemented yet. Parsing aborted...")
     }
   }

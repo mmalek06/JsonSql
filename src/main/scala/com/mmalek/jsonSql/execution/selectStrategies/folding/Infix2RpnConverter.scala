@@ -27,7 +27,7 @@ import scala.collection.mutable
 //
 // It can be made functional, and Ima do it if I have time, I promise!
 object Infix2RpnConverter {
-  private val functionsPrecedence = Token.functions.map(t => t.name -> 6).toSeq.toMap
+  private val functionsPrecedence = Token.functions.map(t => t -> 6).toSeq.toMap
   private val operatorsPrecedence = Map("/" -> 5, "*" -> 5, "%" -> 5, "+" -> 4, "-" -> 4, "(" -> 0)
   private val precedence = operatorsPrecedence.combine(functionsPrecedence)
 
@@ -46,7 +46,7 @@ object Infix2RpnConverter {
           })
           operators.pop()
         case Operator(value) => handleOperators(operators, queue, currentToken, value)
-        case x: Token if Token.functions.contains(x) => handleOperators(operators, queue, currentToken, x.name)
+        case x: Token if Token.functions.contains(x.name) => handleOperators(operators, queue, currentToken, x.name)
       }
     }
 
@@ -58,7 +58,7 @@ object Infix2RpnConverter {
   private def handleOperators(operators: mutable.Stack[Token], queue: mutable.Queue[Token], currentToken: Token, value: String) = {
     queue.addAll(operators.popWhile {
       case Operator(op) => precedence(op) >= precedence(value)
-      case x: Token if Token.functions.contains(x) => precedence(x.name) >= precedence(value)
+      case x: Token if Token.functions.contains(x.name) => precedence(x.name) >= precedence(value)
       case x: Bracket if x.isOpening => precedence(x.value) >= precedence(value)
       case _ => false
     })

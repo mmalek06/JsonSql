@@ -4,5 +4,5 @@ import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import shapeless.{:+:, CNil}
 
 object Types {
-  type CreatorArgument = Unit :+: JString :+: JDouble :+: JInt :+: JBool :+: JObject :+: JArray :+: CNil
+  type CreatorArgument = Unit :+: JString :+: JNumber :+: JBool :+: JObject :+: JArray :+: CNil
 }

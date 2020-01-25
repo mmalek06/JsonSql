@@ -89,7 +89,7 @@ class StateMachine(val state: State) {
   private def canReadFunction(c: Char, valueSoFar: String) = {
     val lowercasedValue = valueSoFar.toLowerCase
 
-    if(valueSoFar.nonEmpty && (c == ' ' || c == '(' || operators.contains(c)) && Token.functions.exists(t => t.name == lowercasedValue)) Some(ReadFunction) else None
+    if(valueSoFar.nonEmpty && (c == ' ' || c == '(' || operators.contains(c)) && Token.functions.contains(lowercasedValue)) Some(ReadFunction) else None
   }
 
   private def canReadField(c: Char, valueSoFar: String) =

@@ -1,14 +1,14 @@
 package com.mmalek.jsonSql.jsonParsing
 
-import com.mmalek.jsonSql.jsonParsing.dataStructures.{JBool, JDouble, JInt, JNull, JString, JValue}
+import com.mmalek.jsonSql.jsonParsing.dataStructures.{JBool, JNumber, JNull, JString, JValue}
 
 object StringOps {
   implicit class JsonParsingStringExtensions(val x: String) {
     def asJValue: JValue =
-      if (x.forall(_.isDigit)) JInt(BigInt(x))
+      if (x.forall(_.isDigit)) JNumber(BigDecimal(x))
       else x
         .toDoubleOption
-        .map(d => JDouble(d))
+        .map(d => JNumber(BigDecimal(d)))
         .getOrElse(x
           .toBooleanOption
           .map(b => JBool(b))
