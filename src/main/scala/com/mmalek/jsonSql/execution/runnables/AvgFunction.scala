@@ -42,8 +42,8 @@ class AvgFunction extends Runnable {
     implicit val atField: Case.Aux[Field, Boolean] = at { _: Field => true }
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Boolean] = at { _: Seq[Option[JValue]] => true }
     implicit val atConst: Case.Aux[Constant, Boolean] = at { _: Constant => false }
-    implicit val atDouble: Case.Aux[Double, Boolean] = at { _: Double => false }
-    implicit val atBigInt: Case.Aux[BigInt, Boolean] = at { _: BigInt => false }
+    implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: BigDecimal => false }
+    implicit val atString: Case.Aux[String, Boolean] = at { _: String => false }
   }
 
   object RunnableArgumentToValueOption extends Poly1 {
@@ -52,7 +52,7 @@ class AvgFunction extends Runnable {
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Option[Or[String, Seq[Option[JValue]]]]] =
       at { x: Seq[Option[JValue]] => Some(MaybeThat(x)) }
     implicit val atConst: Case.Aux[Constant, Option[Or[String, Seq[Option[JValue]]]]] = at { _: Constant => None }
-    implicit val atDouble: Case.Aux[Double, Option[Or[String, Seq[Option[JValue]]]]] = at { _: Double => None }
-    implicit val atBigInt: Case.Aux[BigInt, Option[Or[String, Seq[Option[JValue]]]]] = at { _: BigInt => None }
+    implicit val atDouble: Case.Aux[BigDecimal, Option[Or[String, Seq[Option[JValue]]]]] = at { _: BigDecimal => None }
+    implicit val atString: Case.Aux[String, Option[Or[String, Seq[Option[JValue]]]]] = at { _: String => None }
   }
 }

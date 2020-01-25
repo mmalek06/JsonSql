@@ -1,11 +1,16 @@
 package com.mmalek.jsonSql.execution.selectStrategies.folding
 
 import com.mmalek.jsonSql.execution.TokensInfo
+import com.mmalek.jsonSql.execution.runnables.{AddOperator, AvgFunction}
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token.{Bracket, Default, Field, Operator}
 
 object FoldingStrategy {
+  private val runnables = Seq(
+    new AddOperator,
+    new AvgFunction)
+
   def apply(tokens: Seq[Token], json: JValue, tokensInfo: TokensInfo): Map[String, Seq[Option[JValue]]] = {
     val partitions = partition(tokens)
     val groupedPartitions = groupPartitions(partitions)

@@ -5,5 +5,5 @@ import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field}
 import shapeless.{:+:, CNil}
 
 object Types {
-  type RunnableArgument = Field :+: Constant :+: Double :+: BigInt :+: Seq[Option[JValue]] :+: CNil
+  type RunnableArgument = Field :+: Constant :+: BigDecimal :+: String :+: Seq[Option[JValue]] :+: CNil
 }
