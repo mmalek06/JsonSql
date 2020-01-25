@@ -3,7 +3,7 @@ package com.mmalek.jsonSql.execution.runnables
 import com.mmalek.jsonSql.execution.extensions.JValueOps._
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JDouble, JInt, JValue}
-import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field}
+import com.mmalek.jsonSql.sqlParsing.Token.Field
 import com.mmalek.jsonSql.types.{MaybeThat, MaybeThis, Or}
 import shapeless.{Coproduct, Poly1}
 
@@ -22,9 +22,9 @@ class AvgFunction extends Runnable {
         if(hasInvalidValues(values)) None
         else {
           val numbers = values.flatten.map {
-            case JInt(v) => v.asInstanceOf[Double]
-            case JDouble(v) => v
-            case _ => 0
+            case JInt(v) => BigDecimal(v)
+            case JDouble(v) => BigDecimal(v)
+            case _ => BigDecimal(0)
           }
           val avg = numbers.sum / numbers.length
 
@@ -41,7 +41,6 @@ class AvgFunction extends Runnable {
   object RunnableArgumentToBool extends Poly1 {
     implicit val atField: Case.Aux[Field, Boolean] = at { _: Field => true }
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Boolean] = at { _: Seq[Option[JValue]] => true }
-    implicit val atConst: Case.Aux[Constant, Boolean] = at { _: Constant => false }
     implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: BigDecimal => false }
     implicit val atString: Case.Aux[String, Boolean] = at { _: String => false }
   }
@@ -51,7 +50,6 @@ class AvgFunction extends Runnable {
       at { x: Field => Some(MaybeThis(x.value)) }
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Option[Or[String, Seq[Option[JValue]]]]] =
       at { x: Seq[Option[JValue]] => Some(MaybeThat(x)) }
-    implicit val atConst: Case.Aux[Constant, Option[Or[String, Seq[Option[JValue]]]]] = at { _: Constant => None }
     implicit val atDouble: Case.Aux[BigDecimal, Option[Or[String, Seq[Option[JValue]]]]] = at { _: BigDecimal => None }
     implicit val atString: Case.Aux[String, Option[Or[String, Seq[Option[JValue]]]]] = at { _: String => None }
   }

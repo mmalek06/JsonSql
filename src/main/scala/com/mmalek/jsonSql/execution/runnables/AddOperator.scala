@@ -1,9 +1,8 @@
 package com.mmalek.jsonSql.execution.runnables
 
-import com.mmalek.jsonSql.execution.extensions.StringOps._
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
-import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field}
+import com.mmalek.jsonSql.sqlParsing.Token.Field
 import shapeless.{Coproduct, Poly1}
 
 class AddOperator extends Runnable {
@@ -31,24 +30,21 @@ class AddOperator extends Runnable {
   }
 
   object IsNumeric extends Poly1 {
-    implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: Double => true }
+    implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: BigDecimal => true }
     implicit val atString: Case.Aux[String, Boolean] = at { _: String => false }
-    implicit val atConst: Case.Aux[Constant, Boolean] = at { x: Constant => x.value.isNumber }
     implicit val atField: Case.Aux[Field, Boolean] = at { _: Field => false }
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Boolean] = at { _: Seq[Option[JValue]] => false }
   }
 
   object IsString extends Poly1 {
-    implicit val atConst: Case.Aux[Constant, Boolean] = at { x: Constant => x.value.isString }
     implicit val atString: Case.Aux[String, Boolean] = at { _: String => true }
-    implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: Double => false }
+    implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: BigDecimal => false }
     implicit val atField: Case.Aux[Field, Boolean] = at { _: Field => false }
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Boolean] = at { _: Seq[Option[JValue]] => false }
   }
 
   object RunnableArgumentToNumber extends Poly1 {
-    implicit val atDouble: Case.Aux[BigDecimal, Option[BigDecimal]] = at { x: Double => Some(x) }
-    implicit val atConst: Case.Aux[Constant, Option[BigDecimal]] = at { x: Constant => Some(BigDecimal(x.value)) }
+    implicit val atDouble: Case.Aux[BigDecimal, Option[BigDecimal]] = at { x: BigDecimal => Some(x) }
     implicit val atString: Case.Aux[String, Option[BigDecimal]] = at { _: String => None }
     implicit val atField: Case.Aux[Field, Option[BigDecimal]] = at { _: Field => None }
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Option[BigDecimal]] = at { _: Seq[Option[JValue]] => None }
@@ -56,8 +52,7 @@ class AddOperator extends Runnable {
 
   object RunnableArgumentToString extends Poly1 {
     implicit val atString: Case.Aux[String, Option[String]] = at { x: String => Some(x) }
-    implicit val atConst: Case.Aux[Constant, Option[String]] = at { _: Constant => None }
-    implicit val atDouble: Case.Aux[BigDecimal, Option[String]] = at { _: Double => None }
+    implicit val atDouble: Case.Aux[BigDecimal, Option[String]] = at { _: BigDecimal => None }
     implicit val atField: Case.Aux[Field, Option[String]] = at { _: Field => None }
     implicit val atSeq: Case.Aux[Seq[Option[JValue]], Option[String]] = at { _: Seq[Option[JValue]] => None }
   }

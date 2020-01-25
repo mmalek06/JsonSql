@@ -1,6 +1,7 @@
 package com.mmalek.jsonSql.execution.selectStrategies.folding
 
 import com.mmalek.jsonSql.execution.TokensInfo
+import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.{AddOperator, AvgFunction}
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
@@ -23,8 +24,8 @@ object FoldingStrategy {
   }
 
   private def partition(tokens: Seq[Token]) = {
-    val seed = PartitioningTuple(List.empty[Seq[Token]], Default)
-    val nextAggregate = (aggregate: PartitioningTuple, token: Token) =>
+    val seed = PartitionsTuple(List.empty[Seq[Token]], Default)
+    val nextAggregate = (aggregate: PartitionsTuple, token: Token) =>
       aggregate.copy(partitionedTokens = aggregate.partitionedTokens :+ Seq(token))
 
     tokens.foldLeft(seed)((aggregate, token) =>
@@ -44,7 +45,7 @@ object FoldingStrategy {
 
   private def groupPartitions(partitions: Seq[Seq[Token]]) =
     partitions
-      .foldLeft(PartitionInfo(Nil, Nil))((aggregate, p) =>
+      .foldLeft(PartitionGroups(Nil, Nil))((aggregate, p) =>
         if (hasOperator(p)) aggregate.copy(arithmetic = aggregate.arithmetic :+ p)
         else aggregate.copy(other = aggregate.other :+ p))
 
@@ -54,15 +55,17 @@ object FoldingStrategy {
       case _ => false
     }
 
-  private def runOps(value: Seq[Token]) =
-    ???
+  private def runOps(tokens: Seq[Token]) = ???
+//    tokens.foldLeft(Seq.empty[RunnableArgument]) {
+//      case
+//    }
 
   private def isFunction(x: Token) =
     Token.functions.exists(t => t.name == x.name)
 
-  private case class PartitioningTuple(partitionedTokens: Seq[Seq[Token]],
-                                       previousToken: Token)
+  private case class PartitionsTuple(partitionedTokens: Seq[Seq[Token]],
+                                     previousToken: Token)
 
-  private case class PartitionInfo(arithmetic: Seq[Seq[Token]],
-                                   other: Seq[Seq[Token]])
+  private case class PartitionGroups(arithmetic: Seq[Seq[Token]],
+                                     other: Seq[Seq[Token]])
 }
