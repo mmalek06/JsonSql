@@ -4,10 +4,10 @@ object App {
   def main(args: Array[String]): Unit = {
     val query =
       s"""
-        SELECT "age", "name"
+        SELECT "items.age", "items.name"
         FROM ##json##
         """
-    val data = runJsonSql(query, SampleJson.single)
+    val data = runJsonSql(query, SampleJson.list)
 
     println("ASDf")
   }

@@ -94,7 +94,8 @@ object JsonParser {
   private val getPropertyKey = (name: String) =>
     (arg: CreatorArgument) => JField(name, arg.fold(CreatorArgumentToJValue))
 
-  private val getScalar = (scalar: String) => (_: CreatorArgument) => scalar.asJValue
+  private val getScalar = (scalar: String) =>
+    (_: CreatorArgument) => scalar.asJValue
 
   private val getObject = (arg: CreatorArgument) =>
     arg.select[JObject] match {

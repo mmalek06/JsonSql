@@ -5,7 +5,7 @@ import com.mmalek.jsonSql.jsonParsing.dataStructures.{JBool, JNumber, JNull, JSt
 object StringOps {
   implicit class JsonParsingStringExtensions(val x: String) {
     def asJValue: JValue =
-      if (x.forall(_.isDigit)) JNumber(BigDecimal(x))
+      if (!x.isEmpty && x.forall(_.isDigit)) JNumber(BigDecimal(x))
       else x
         .toDoubleOption
         .map(d => JNumber(BigDecimal(d)))
