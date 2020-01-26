@@ -4,6 +4,7 @@ import com.mmalek.jsonSql.execution.TokensInfo
 import com.mmalek.jsonSql.execution.extensions.StringOps._
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.{AddOperator, AvgFunction}
+import com.mmalek.jsonSql.execution.selectStrategies.MappingStrategy
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
@@ -20,8 +21,8 @@ object FoldingStrategy {
     val groupedPartitions = groupPartitions(partitions)
     val rnpPartitions = groupedPartitions.arithmetic.map(p => Infix2RpnConverter.convert(p))
     val runnablePartitions = groupedPartitions.copy(arithmetic = rnpPartitions)
-    val arithmeticResults = runnablePartitions.arithmetic.map(runOps)
-    val otherResults = runnablePartitions.other.map(runOps)
+    val arithmeticResults = runnablePartitions.arithmetic.map(runOps(_, json))
+    val otherResults = runnablePartitions.other.map(MappingStrategy(_, json))
 
     ???
   }
@@ -58,12 +59,12 @@ object FoldingStrategy {
       case _ => false
     }
 
-  private def runOps(tokens: Seq[Token]) =
+  private def runOps(tokens: Seq[Token], json: JValue) =
     tokens.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((aggOrError, t) => (aggOrError, t) match {
       case (Right(aggregate), x: Constant) => getConstant(aggregate, x)
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
       case (Right(aggregate), x: Operator) => runOperator(aggregate, x)
-      case (Right(aggregate), x: Function) => runFunction(aggregate, x)
+      case (Right(aggregate), x: Function) => runFunction(aggregate, json, x)
       case _ => aggOrError
     })
 
@@ -78,10 +79,10 @@ object FoldingStrategy {
       .map(value => Right(aggregate :+ value))
       .getOrElse(Left(s"Couldn't run ${x.value} operator, because the input was in bad format. Aborting..."))
 
-  private def runFunction(aggregate: Seq[RunnableArgument], x: Function) =
+  private def runFunction(aggregate: Seq[RunnableArgument], json: JValue, x: Function) =
     functions
       .find(_.canRun(x.name, aggregate))
-      .flatMap(_.run(aggregate, null))
+      .flatMap(_.run(aggregate, Some(json)))
       .map(value => Right(aggregate :+ value))
       .getOrElse(Left(s"Couldn't run ${x.name} function, because the input was in bad format. Aborting..."))
 

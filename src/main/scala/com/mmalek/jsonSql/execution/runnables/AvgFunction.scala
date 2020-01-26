@@ -23,9 +23,9 @@ class AvgFunction extends Runnable {
             case JNumber(v) => v
             case _ => BigDecimal(0)
           }
-          val avg = numbers.sum / numbers.length
 
-          Some(Coproduct[RunnableArgument](avg))
+          if (numbers.isEmpty) None
+          else Some(Coproduct[RunnableArgument](numbers.sum / numbers.length))
         }
       })
 

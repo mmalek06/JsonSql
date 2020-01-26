@@ -92,7 +92,9 @@ object Tokenizer {
 
   @tailrec
   private def cleanValue(value: String): String = {
-    val trimmed = value.trim
+    val trimmed =
+      if (value.startsWith("\"")) value.substring(1, value.length - 1)
+      else value.trim
 
     if (trimmed.nonEmpty && trimmed(0) == ',') cleanValue(trimmed.substring(1))
     else trimmed

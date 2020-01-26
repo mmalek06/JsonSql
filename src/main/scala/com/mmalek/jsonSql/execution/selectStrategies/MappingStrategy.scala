@@ -7,8 +7,11 @@ import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field}
 
 object MappingStrategy {
-  def apply(tokens: Seq[Token], json: JValue): Map[String, Seq[Option[JValue]]] =
-    tokens.flatMap(getValues(_, json)).toMap
+  def apply(tokens: Seq[Token], json: JValue): Map[String, Seq[Option[JValue]]] = {
+    val value = tokens.flatMap(getValues(_, json)).toMap
+
+    value
+  }
 
   private def getValues(token: Token, value: JValue): Option[(String, Seq[Option[JValue]])] =
     token match {
