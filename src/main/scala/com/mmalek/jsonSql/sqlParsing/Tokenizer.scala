@@ -92,12 +92,13 @@ object Tokenizer {
 
   @tailrec
   private def cleanValue(value: String): String = {
-    val trimmed =
-      if (value.startsWith("\"")) value.substring(1, value.length - 1)
-      else value.trim
+    val trimmed = value.trim
+    val initCleaned =
+      if (trimmed.startsWith("\"")) trimmed.substring(1, trimmed.length - 1)
+      else trimmed
 
-    if (trimmed.nonEmpty && trimmed(0) == ',') cleanValue(trimmed.substring(1))
-    else trimmed
+    if (initCleaned.nonEmpty && initCleaned(0) == ',') cleanValue(initCleaned.substring(1))
+    else initCleaned
   }
 
   private case class ParsingTuple(stateMachine: StateMachine,
