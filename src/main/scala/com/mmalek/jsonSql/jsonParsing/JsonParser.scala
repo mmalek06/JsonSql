@@ -2,6 +2,7 @@ package com.mmalek.jsonSql.jsonParsing
 
 import com.mmalek.jsonSql.jsonParsing.StringOps._
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
+import com.mmalek.jsonSql.jsonParsing.dataStructures.NodeKind._
 import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import com.mmalek.jsonSql.jsonParsing.fsm.State._
 import com.mmalek.jsonSql.jsonParsing.fsm.{State, StateMachine}
@@ -43,11 +44,12 @@ object JsonParser {
 
   private def getActionTuple(state: State, sb: StringBuilder) =
     state match {
-      case ReadObjectEnd | ReadArrayEnd => (Navigation.Up, KeyNode(""), None)
+      case ReadObjectEnd | ReadArrayEnd => (Navigation.Up, NoneNode, None)
       case ReadObject => (Navigation.Down, ObjectNode, Some(getObject))
       case ReadObjectKey => (Navigation.Down, KeyNode(sb.toString), Some(getPropertyKey(getCleanedPropertyKey(sb))))
       case ReadArray => (Navigation.Down, ArrayNode, Some(getArray))
       case ReadScalar => (Navigation.Up, ScalarNode(sb.toString), Some(getScalar(getCleanedScalar(sb))))
+      case Initial => (Navigation.Stay, NoneNode, None)
       case _ => (Navigation.Stay, KeyNode(sb.toString), None)
     }
 
@@ -60,11 +62,18 @@ object JsonParser {
     val rightmostPath = newTree.getRightmostChildPath()
     val oldPath = updatePathObjects(aggregate.currentTreePath, rightmostPath)
     val path =
-      if (navigation == Navigation.Up) oldPath.init
+      if (shouldPopTwo(oldPath) && navigation == Navigation.Up) oldPath.init.init
+      else if (navigation == Navigation.Up && oldPath.nonEmpty) oldPath.init
       else if (navigation == Navigation.Stay) oldPath
       else rightmostPath
 
     ParsingTuple(sm, newTree, path, aggregate.builder, history)
+  }
+
+  private def shouldPopTwo(oldPath: List[Node]) = {
+    if (oldPath.length >= 2)
+      (oldPath.lastOption.exists(_.kind == ObjectNode) || oldPath.lastOption.exists(_.kind == ArrayNode)) && oldPath.init.lastOption.exists(n => n.kind.isInstanceOf[KeyNode])
+    else false
   }
 
   private def updatePathObjects(currentTreePath: Seq[Node], newObjects: Seq[Node]) =

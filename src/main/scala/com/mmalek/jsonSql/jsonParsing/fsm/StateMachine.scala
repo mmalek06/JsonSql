@@ -69,7 +69,7 @@ class StateMachine(val state: State) {
     if (c == ']') Some(ReadArrayEnd) else None
 
   private def canReadScalarAfterArrayOpen(c: Char, valueSoFar: String, history: Seq[State]) =
-    if (c != '{' && c != '[' && c != ']') Some(ReadScalar) else None
+    if (c != '{' && c != '[' && c != ']' && c != ' ') Some(ReadScalar) else None
 
   private def canReadScalarAfterObjectKey(c: Char, valueSoFar: String, history: Seq[State]) =
     if (isKeyReadFully(valueSoFar) && isLastRememberedCharColon(valueSoFar) && c != '{' && c != '[' && c != ' ') Some(ReadScalar) else None
@@ -139,15 +139,15 @@ class StateMachine(val state: State) {
     if (c == ']' && isIn(ReadArray, ReadArrayEnd, history)) Some(ReadArrayEnd) else None
 
   private def canReadScalarAfterSomeEnd(c: Char, valueSoFar: String, history: Seq[State]) =
-    if (c != '{' && c != '[' && c != ']' && isIn(ReadArray, ReadArrayEnd, history)) Some(ReadScalar) else None
+    if (c != '{' && c != '}' && c != '[' && c != ']' && isIn(ReadArray, ReadArrayEnd, history) && !isIn(ReadObject, ReadObjectEnd, history)) Some(ReadScalar) else None
 
   private def isIn(openState: State, closeState: State, history: Seq[State]) =
     history.foldLeft((false, 0))((aggregate, state) => {
-      val (foundArray, openBracketsCnt) = aggregate
+      val (foundOpener, openBracketsCnt) = aggregate
 
-      if (!foundArray && state == openState && openBracketsCnt == 0) (true, 1)
-      else if (!foundArray && state == openState && openBracketsCnt > 0) (false, openBracketsCnt - 1)
-      else if (!foundArray && state == closeState) (false, openBracketsCnt + 1)
+      if (!foundOpener && state == openState && openBracketsCnt == 0) (true, 1)
+      else if (!foundOpener && state == openState && openBracketsCnt > 0) (false, openBracketsCnt - 1)
+      else if (!foundOpener && state == closeState) (false, openBracketsCnt + 1)
       else aggregate
     })._1
 

@@ -7,23 +7,13 @@ object SampleJson {
           "items":[
               {
                   "id":1,
-                  "age":1,
-                  "name":"Ralph",
-                  "surname":"Garcia",
-                  "fullname":"Raymond Mann",
-                  "isEmployee":true,
                   "address":{
                       "street": "Obrońców Wybrzeża",
-                      "city: "Gdańsk"
+                      "city": "Gdańsk"
                   }
               },
               {
                   "id":2,
-                  "age":36,
-                  "name":"Sherri",
-                  "surname":"Barton",
-                  "fullname":"Tracy Liu",
-                  "isEmployee":true,
                   "address": null
               },
               {
@@ -35,7 +25,7 @@ object SampleJson {
                   "isEmployee":true,
                   "address":{
                       "street": "Obrońców Wybrzeża",
-                      "city: "Gdańsk"
+                      "city": "Gdańsk"
                   }
               },
               {
@@ -56,7 +46,7 @@ object SampleJson {
                   "name":"Timothy",
                   "surname":"Burnett",
                   "fullname":"Debra McKenna",
-                  "isEmployee":false,
+                  "isEmployee":false
               },
               {
                   "id":6,
@@ -75,7 +65,7 @@ object SampleJson {
                   "fullname":"Karen Grimes",
                   "isEmployee":true,
                       "street": "Obrońców Wybrzeża",
-                      "city: "Gdańsk"
+                      "city": "Gdańsk"
               },
               {
                   "id":8,
