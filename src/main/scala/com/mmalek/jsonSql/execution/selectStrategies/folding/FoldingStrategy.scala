@@ -1,14 +1,14 @@
 package com.mmalek.jsonSql.execution.selectStrategies.folding
 
 import com.mmalek.jsonSql.execution.TokensInfo
-import com.mmalek.jsonSql.execution.extensions.StringOps._
+import com.mmalek.jsonSql.extensions.StringOps._
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.{AddOperator, AvgFunction}
 import com.mmalek.jsonSql.execution.selectStrategies.MappingStrategy
-import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
+import com.mmalek.jsonSql.jsonParsing.dataStructures.{JField, JValue}
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
-import shapeless.Coproduct
+import shapeless.{Coproduct, Inl, Inr}
 
 object FoldingStrategy {
   private val operators = Seq(
@@ -16,15 +16,26 @@ object FoldingStrategy {
   private val functions = Seq(
     new AvgFunction)
 
-  def apply(tokens: Seq[Token], json: JValue, tokensInfo: TokensInfo): Map[String, Seq[Option[JValue]]] = {
+  def apply(tokens: Seq[Token], json: JValue, tokensInfo: TokensInfo): Either[String, Map[String, Seq[Option[JValue]]]] = {
     val partitions = partition(tokens)
     val groupedPartitions = groupPartitions(partitions)
     val rnpPartitions = groupedPartitions.arithmetic.map(p => Infix2RpnConverter.convert(p))
     val runnablePartitions = groupedPartitions.copy(arithmetic = rnpPartitions)
-    val arithmeticResults = runnablePartitions.arithmetic.map(runOps(_, json))
-    val otherResults = runnablePartitions.other.map(MappingStrategy(_, json))
+    val arithmeticResults = runnablePartitions.arithmetic.map(runOps(_, json)).toList
+    val otherResults = runnablePartitions.other.map(MappingStrategy(_, json)).toList
+    val leftArithmetic = arithmeticResults.find(_.isLeft)
+    val leftOther = otherResults.find(_.isLeft)
 
-    ???
+    if (leftArithmetic.isDefined) leftArithmetic.get
+    else if (leftOther.isDefined) leftOther.get
+    else {
+      val mergedValues =
+        arithmeticResults.collect { case Right(value) => value } :::
+        otherResults.collect { case Right(value) => value }
+      val result = mergedValues.flatten.toMap
+
+      Right(result)
+    }
   }
 
   private def partition(tokens: Seq[Token]) = {
@@ -56,17 +67,22 @@ object FoldingStrategy {
   private def hasOperator(partition: Seq[Token]) =
     partition.exists {
       case _: Operator => true
+      case _: Function => true
       case _ => false
     }
 
-  private def runOps(tokens: Seq[Token], json: JValue) =
+  private def runOps(tokens: Seq[Token], json: JValue): Either[String, Map[String, Seq[Option[JValue]]]] =
     tokens.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((aggOrError, t) => (aggOrError, t) match {
       case (Right(aggregate), x: Constant) => getConstant(aggregate, x)
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
       case (Right(aggregate), x: Operator) => runOperator(aggregate, x)
       case (Right(aggregate), x: Function) => runFunction(aggregate, json, x)
       case _ => aggOrError
-    })
+    }) match {
+      case Right(Seq(Inl(Field(name)), Inr(Inl(value)))) => Right(Map(s"${tokens.last.name}_${name}" -> Seq(Some(value.toString.asJValue))))
+      case Right(_) => Left("Something went wrong...")
+      case Left(x) => Left(x)
+    }
 
   private def getConstant(aggregate: Seq[RunnableArgument], const: Constant) =
     if (const.value.isNumber) Right(aggregate :+ Coproduct[RunnableArgument](BigDecimal(const.value)))

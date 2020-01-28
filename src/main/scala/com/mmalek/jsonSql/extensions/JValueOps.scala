@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.execution.extensions
+package com.mmalek.jsonSql.extensions
 
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JObject, JValue}
 
@@ -16,9 +16,12 @@ object JValueOps {
             case Some(value) => walk(path.tail, value)
             case _ => Seq(None)
           }
-        case JArray(arr) if path.tail.isEmpty => Seq(Some(JArray(arr)))
-        case JArray(arr) => arr.flatMap(v => walk(path.tail, v))
-        case _ => Seq(Some(x))
+        case JArray(arr) if path.tail.isEmpty =>
+          arr.flatMap(v => walk(path, v))
+        case JArray(arr) =>
+          arr.flatMap(v => walk(path.tail, v))
+        case _ =>
+          Seq(Some(x))
       }
   }
 }

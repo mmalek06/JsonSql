@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql.jsonParsing
 
-import com.mmalek.jsonSql.jsonParsing.StringOps._
+import com.mmalek.jsonSql.extensions.StringOps._
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
 import com.mmalek.jsonSql.jsonParsing.dataStructures.NodeKind._
 import com.mmalek.jsonSql.jsonParsing.dataStructures._

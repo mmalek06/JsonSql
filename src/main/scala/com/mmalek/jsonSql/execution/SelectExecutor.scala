@@ -2,12 +2,12 @@ package com.mmalek.jsonSql.execution
 
 import com.mmalek.jsonSql.execution.selectStrategies.MappingStrategy
 import com.mmalek.jsonSql.execution.selectStrategies.folding.FoldingStrategy
-import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
+import com.mmalek.jsonSql.jsonParsing.dataStructures.{JNull, JValue}
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
 
 class SelectExecutor(actions: Map[Token, Seq[Token]]) {
-  def select(json: JValue): Map[String, Seq[Option[JValue]]] = {
+  def select(json: JValue): Either[String, Map[String, Seq[Option[JValue]]]] = {
     val tokens = actions(Select)
     val info = getTokensInfo(tokens)
 
@@ -21,8 +21,8 @@ class SelectExecutor(actions: Map[Token, Seq[Token]]) {
       case _ => None
     }
 
-  def where(json: JValue): Option[JValue] =
-    actions.get(Where).map(filterJson(_, json))
+  def where(json: JValue): JValue =
+    actions.get(Where).map(filterJson(_, json)).getOrElse(JNull)
 
   private def getTokensInfo(tokens: Seq[Token]) =
     tokens.foldLeft(TokensInfo(hasOperators = false, hasFunctions = false))((aggregate, t) => t match {

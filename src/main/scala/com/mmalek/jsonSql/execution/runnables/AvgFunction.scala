@@ -1,6 +1,6 @@
 package com.mmalek.jsonSql.execution.runnables
 
-import com.mmalek.jsonSql.execution.extensions.JValueOps._
+import com.mmalek.jsonSql.extensions.JValueOps._
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JNumber, JValue}
 import com.mmalek.jsonSql.sqlParsing.Token.Field
@@ -13,21 +13,22 @@ class AvgFunction extends Runnable {
   def run(args: Seq[RunnableArgument], json: Option[JValue]): Option[RunnableArgument] =
     if (json.isEmpty) None
     else
-      args.head
-      .fold(RunnableArgumentToValueOption)
-      .map(fieldName => json.get.getValuesFor(fieldName.split(".")))
-      .flatMap(values => {
-        if(hasInvalidValues(values)) None
-        else {
-          val numbers = values.flatten.map {
-            case JNumber(v) => v
-            case _ => BigDecimal(0)
-          }
+      args
+        .head
+        .fold(RunnableArgumentToValueOption)
+        .map(fieldName => json.get.getValuesFor(fieldName.split("\\.")))
+        .flatMap(values => {
+          if(hasInvalidValues(values)) None
+          else {
+            val numbers = values.flatten.map {
+              case JNumber(v) => v
+              case _ => BigDecimal(0)
+            }
 
-          if (numbers.isEmpty) None
-          else Some(Coproduct[RunnableArgument](numbers.sum / numbers.length))
-        }
-      })
+            if (numbers.isEmpty) None
+            else Some(Coproduct[RunnableArgument](numbers.sum / numbers.length))
+          }
+        })
 
   private def hasInvalidValues(values: Seq[Option[JValue]]) =
     values.exists {
