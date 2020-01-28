@@ -46,7 +46,7 @@ object Infix2RpnConverter {
           })
           operators.pop()
         case Operator(value) => handleOperators(operators, queue, currentToken, value)
-        case x: Token if Token.functions.contains(x.name) => handleOperators(operators, queue, currentToken, x.name)
+        case Token.Function(name) => handleOperators(operators, queue, currentToken, name)
       }
     }
 
@@ -58,7 +58,7 @@ object Infix2RpnConverter {
   private def handleOperators(operators: mutable.Stack[Token], queue: mutable.Queue[Token], currentToken: Token, value: String) = {
     queue.addAll(operators.popWhile {
       case Operator(op) => precedence(op) >= precedence(value)
-      case x: Token if Token.functions.contains(x.name) => precedence(x.name) >= precedence(value)
+      case Token.Function(name) => precedence(name) >= precedence(value)
       case x: Bracket if x.isOpening => precedence(x.value) >= precedence(value)
       case _ => false
     })

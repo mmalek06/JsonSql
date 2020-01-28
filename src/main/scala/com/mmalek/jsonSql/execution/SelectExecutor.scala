@@ -27,7 +27,7 @@ class SelectExecutor(actions: Map[Token, Seq[Token]]) {
   private def getTokensInfo(tokens: Seq[Token]) =
     tokens.foldLeft(TokensInfo(hasOperators = false, hasFunctions = false))((aggregate, t) => t match {
       case _: Operator => aggregate.copy(hasOperators = true)
-      case x if Token.functions.contains(x.name) => aggregate.copy(hasFunctions = true)
+      case Token.Function(_) => aggregate.copy(hasFunctions = true)
       case _ => aggregate
     })
 
