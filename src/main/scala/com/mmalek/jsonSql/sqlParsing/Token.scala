@@ -28,6 +28,7 @@ object Token extends Enum[Token] {
     val isOpening: Boolean = value == "("
   }
   case class Field(value: String) extends Token()
+  case class FieldAlias(value: String) extends Token()
   case class Constant(value: String) extends Token()
   case class Operator(value: String) extends Token()
 }

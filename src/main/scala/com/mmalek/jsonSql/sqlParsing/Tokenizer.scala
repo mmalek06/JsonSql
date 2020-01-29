@@ -10,18 +10,21 @@ object Tokenizer {
   def tokenize(input: String): (Seq[Token], Option[String]) = {
     val cleanedInput = input.replace("##json##", "") + " "
     val seed = getSeed
-    val ParsingTuple(_, tokens, _, error) = cleanedInput
+    val ParsingTuple(_, tokens, _, error, _) = cleanedInput
       .foldLeft(seed)((aggregate, char) => {
         if (aggregate.invalidSql.isDefined) aggregate
         else
-          aggregate.stateMachine.next(char, aggregate.builder).map(sm => {
+          aggregate.stateMachine.next(char, aggregate.builder, aggregate.statesHistory).map(sm => {
             getToken(sm.state, aggregate.builder) match {
               case None => aggregate
               case Some(Left(error)) => aggregate.copy(invalidSql = Some(error))
               case Some(Right(token)) =>
                 aggregate.builder.clear()
                 aggregate.builder.append(char)
-                aggregate.copy(stateMachine = sm, tokens = aggregate.tokens :+ token)
+
+                val nextHistory = sm.state :: aggregate.statesHistory.toList
+
+                aggregate.copy(stateMachine = sm, tokens = aggregate.tokens :+ token, statesHistory = nextHistory)
             }
           }).getOrElse({
             aggregate.builder.append(char)
@@ -37,7 +40,8 @@ object Tokenizer {
       new StateMachine(State.Initial),
       List.empty[Token],
       new StringBuilder,
-      None)
+      None,
+      Nil)
 
   private def getToken(state: State, builder: StringBuilder) =
     (builder.toString.trim, state) match {
@@ -46,6 +50,8 @@ object Tokenizer {
       case (_, ReadSelect) => Some(Right(Select))
       case (_, ReadUpdate) => Some(Right(Update))
       case (_, ReadDelete) => Some(Right(Delete))
+      case (_, ReadAs) => Some(Right(As))
+      case (value, ReadAsValue) => Some(Right(FieldAlias(cleanValue(value))))
       case (value, ReadFunction) => Some(getFunction(removeBrackets(value)))
       case (value, ReadField) => Some(Right(Field(removeBrackets(cleanValue(value)))))
       case (value, ReadConstant) => Some(Right(Constant(removeBrackets(cleanValue(value)))))
@@ -104,5 +110,6 @@ object Tokenizer {
   private case class ParsingTuple(stateMachine: StateMachine,
                                   tokens: Seq[Token],
                                   builder: StringBuilder,
-                                  invalidSql: Option[String])
+                                  invalidSql: Option[String],
+                                  statesHistory: Seq[State])
 }
