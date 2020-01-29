@@ -10,8 +10,9 @@ object MappingStrategy {
   def apply(tokens: Seq[Token], json: JValue): Either[String, Map[String, Seq[Option[JValue]]]] = {
     val rawValues = tokens.flatMap(getValues(_, json)).toMap
     val aliases = findAliases(tokens)
+    val aliasedValues = rawValues.map(pair => aliases.get(pair._1).map(alias => (alias, pair._2)).getOrElse(pair))
 
-    Right(rawValues)
+    Right(aliasedValues)
   }
 
   private def getValues(token: Token, value: JValue): Option[(String, Seq[Option[JValue]])] =
@@ -30,5 +31,5 @@ object MappingStrategy {
 
         aggregate.init :+ (key, alias)
       case _ => aggregate
-    }).filter(_._2 != "")
+    }).filter(_._2 != "").toMap
 }
