@@ -46,10 +46,12 @@ class StateMachine(val state: State) {
     State.ReadFrom -> Seq(
       canReadWhere),
     State.ReadWhere -> Seq(
+      canReadBracket,
       canReadFunction,
       canReadField,
       canReadConstant),
     State.ReadConjunction -> Seq(
+      canReadBracket,
       canReadFunction,
       canReadField,
       canReadConstant),
@@ -58,7 +60,8 @@ class StateMachine(val state: State) {
       canReadField,
       canReadConstant,
       canReadOperator,
-      canReadAs),
+      canReadAs,
+      canReadConjunction),
     State.ReadAs -> Seq(
       canReadAsValue),
     State.ReadAsValue -> Seq(
@@ -68,7 +71,7 @@ class StateMachine(val state: State) {
       canReadConstant,
       canReadOperator,
       canReadFrom))
-  private val operators = Set('-', '+', '/', '*', '%', '=', '!')
+  private val operators = Set("-", "+", "/", "*", "%", "=", "!", ">", "<", "!=")
 
   def next(c: Char, sb: StringBuilder, history: Seq[State]): Option[StateMachine] = {
     val trimmedVal = sb.toString.trim
@@ -101,19 +104,19 @@ class StateMachine(val state: State) {
   private def canReadFunction(c: Char, valueSoFar: String, history: Seq[State]) = {
     val lowercaseValue = valueSoFar.toLowerCase
 
-    if(valueSoFar.nonEmpty && (c == ' ' || c == '(' || operators.contains(c)) && Token.functions.contains(lowercaseValue)) Some(ReadFunction) else None
+    if(valueSoFar.nonEmpty && (c == ' ' || c == '(') && Token.functions.contains(lowercaseValue)) Some(ReadFunction) else None
   }
 
   private def canReadField(c: Char, valueSoFar: String, history: Seq[State]) =
     if(valueSoFar.length > 2 && valueSoFar(0) == '"' && valueSoFar.last == '"') Some(ReadField) else None
 
   private def canReadConstant(c: Char, valueSoFar: String, history: Seq[State]) =
-    if ((valueSoFar.nonEmpty && (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit)) && (c == ',' || c == ' ')) ||
+    if ((valueSoFar.nonEmpty && (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit)) && (c == ',' || c == ' ' || c == ')')) ||
         (valueSoFar.length > 2 && (valueSoFar(0) == '\'' && valueSoFar.last == '\''))) Some(ReadConstant)
     else None
 
   private def canReadOperator(c: Char, valueSoFar: String, history: Seq[State]) =
-    if (valueSoFar.nonEmpty && operators.contains(valueSoFar(0))) Some(ReadOperator) else None
+    if (valueSoFar.nonEmpty && operators.contains(valueSoFar) && !operators.contains(s"${valueSoFar}$c")) Some(ReadOperator) else None
 
   private def canReadFrom(c: Char, valueSoFar: String, history: Seq[State]) =
     if (valueSoFar.toLowerCase == "from") Some(ReadFrom) else None

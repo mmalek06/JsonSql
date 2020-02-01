@@ -55,7 +55,7 @@ object Tokenizer {
       case (value, ReadFunction) => Some(getFunction(removeBrackets(value)))
       case (value, ReadField) => Some(Right(Field(removeBrackets(cleanValue(value)))))
       case (value, ReadConstant) => Some(Right(Constant(removeBrackets(cleanValue(value)))))
-      case (value, ReadOperator) => Some(Right(Operator(removeBrackets(cleanValue(value))(0).toString)))
+      case (value, ReadOperator) => Some(Right(Operator(removeBrackets(cleanValue(value)))))
       case (_, ReadFrom) => Some(Right(From))
       case (_, ReadWhere) => Some(Right(Where))
       case (value, ReadConjunction) => Some(getConjunction(value))

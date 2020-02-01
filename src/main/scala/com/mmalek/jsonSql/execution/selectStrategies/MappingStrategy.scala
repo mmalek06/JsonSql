@@ -15,7 +15,7 @@ object MappingStrategy {
     Right(aliasedValues)
   }
 
-  private def getValues(token: Token, value: JValue): Option[(String, Seq[Option[JValue]])] =
+  private def getValues(token: Token, value: JValue) =
     token match {
       case t: Field => Some(t.value -> value.getValuesFor(t.value.split("\\.")))
       case t: Constant => Some(t.value -> Seq(Some(t.value.asJValue)))
