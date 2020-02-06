@@ -1,8 +1,9 @@
-package com.mmalek.jsonSql.execution.selectStrategies
+package com.mmalek.jsonSql.execution.selection
 
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnArithmeticConverter
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.{AddOperator, AvgFunction}
+import com.mmalek.jsonSql.execution.{runFunction, runOperator}
 import com.mmalek.jsonSql.extensions.StringOps._
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
@@ -79,8 +80,8 @@ object FoldingStrategy {
     tokens.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((aggOrError, t) => (aggOrError, t) match {
       case (Right(aggregate), x: Constant) => getConstant(aggregate, x)
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
-      case (Right(aggregate), x: Operator) => runOperator(aggregate, x)
-      case (Right(aggregate), x: Function) => runFunction(aggregate, json, x)
+      case (Right(aggregate), x: Operator) => runOperator(operators, aggregate, x)
+      case (Right(aggregate), x: Function) => runFunction(functions, aggregate, json, x)
       case _ => aggOrError
     }) match {
       case Right(Seq(Inl(Field(name)), Inr(Inl(value)))) => Right(Map(name -> Seq(Some(value.toString.asJValue))))
@@ -92,23 +93,6 @@ object FoldingStrategy {
     if (const.value.isNumber) Right(aggregate :+ Coproduct[RunnableArgument](BigDecimal(const.value)))
     else Right(aggregate :+ Coproduct[RunnableArgument](const.value))
 
-  private def runOperator(aggregate: Seq[RunnableArgument], x: Operator) =
-    operators
-      .find(_.canRun(x.value, aggregate))
-      .flatMap(_.run(aggregate))
-      .map(value => Right(aggregate :+ value))
-      .getOrElse(Left(s"Couldn't run ${x.value} operator, because the input was in bad format. Aborting..."))
-
-  private def runFunction(aggregate: Seq[RunnableArgument], json: JValue, x: Function) =
-    functions
-      .find(_.canRun(x.name, aggregate))
-      .flatMap(_.run(aggregate, Some(json)))
-      .map(value => Right(aggregate :+ value))
-      .getOrElse(Left(s"Couldn't run ${x.name} function, because the input was in bad format. Aborting..."))
-
   private case class PartitionsTuple(partitionedTokens: Seq[Seq[Token]],
                                      previousToken: Token)
-
-  private case class PartitionGroups(arithmetic: Seq[Seq[Token]],
-                                     other: Seq[Seq[Token]])
 }

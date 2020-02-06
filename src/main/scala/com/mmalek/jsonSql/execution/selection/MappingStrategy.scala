@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.execution.selectStrategies
+package com.mmalek.jsonSql.execution.selection
 
 import com.mmalek.jsonSql.extensions.JValueOps._
 import com.mmalek.jsonSql.extensions.StringOps._
