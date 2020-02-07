@@ -2,8 +2,9 @@ package com.mmalek.jsonSql.execution.selection
 
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnArithmeticConverter
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
-import com.mmalek.jsonSql.execution.runnables.{AddOperator, AvgFunction}
-import com.mmalek.jsonSql.execution.{runFunction, runOperator}
+import com.mmalek.jsonSql.execution.runnables.functions.AvgFunction
+import com.mmalek.jsonSql.execution.runnables.operators.AddOperator
+import com.mmalek.jsonSql.execution.{getConstant, runFunction, runOperator}
 import com.mmalek.jsonSql.extensions.StringOps._
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
@@ -34,8 +35,8 @@ object FoldingStrategy {
       case p if isAlias(p) =>
         p.collectFirst { case FieldAlias(value) => value }
           .map((key: String) => Right(Seq(key -> agg.last._2)))
-          .getOrElse(Left("Alias expected, but not given. Parsing aborted..."))
-          .map(vals => agg.init :+ vals.head)
+          .getOrElse(Left("Expected alias, but none was found. Parsing aborted..."))
+          .map(agg.init :+ _.head)
       case p if hasOperator(p) => runOps(Infix2RpnArithmeticConverter.convert(p), json).map(agg :+ _.head)
       case p => MappingStrategy(p, json).map(agg :+ _.head)
     }
@@ -78,7 +79,7 @@ object FoldingStrategy {
 
   private def runOps(tokens: Seq[Token], json: JValue): Either[String, Map[String, Seq[Option[JValue]]]] =
     tokens.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((aggOrError, t) => (aggOrError, t) match {
-      case (Right(aggregate), x: Constant) => getConstant(aggregate, x)
+      case (Right(aggregate), x: Constant) => Right(getConstant(aggregate, x))
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
       case (Right(aggregate), x: Operator) => runOperator(operators, aggregate, x)
       case (Right(aggregate), x: Function) => runFunction(functions, aggregate, json, x)
@@ -88,10 +89,6 @@ object FoldingStrategy {
       case Right(_) => Left("Something went wrong...")
       case Left(x) => Left(x)
     }
-
-  private def getConstant(aggregate: Seq[RunnableArgument], const: Constant) =
-    if (const.value.isNumber) Right(aggregate :+ Coproduct[RunnableArgument](BigDecimal(const.value)))
-    else Right(aggregate :+ Coproduct[RunnableArgument](const.value))
 
   private case class PartitionsTuple(partitionedTokens: Seq[Seq[Token]],
                                      previousToken: Token)

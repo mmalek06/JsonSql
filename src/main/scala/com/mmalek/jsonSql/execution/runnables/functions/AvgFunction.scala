@@ -1,7 +1,8 @@
-package com.mmalek.jsonSql.execution.runnables
+package com.mmalek.jsonSql.execution.runnables.functions
 
-import com.mmalek.jsonSql.extensions.JValueOps._
+import com.mmalek.jsonSql.execution.runnables.Runnable
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
+import com.mmalek.jsonSql.extensions.JValueOps._
 import com.mmalek.jsonSql.jsonParsing.dataStructures.{JNumber, JValue}
 import com.mmalek.jsonSql.sqlParsing.Token.Field
 import shapeless.{Coproduct, Poly1}
@@ -40,11 +41,13 @@ class AvgFunction extends Runnable {
     implicit val atField: Case.Aux[Field, Boolean] = at { _: Field => true }
     implicit val atDouble: Case.Aux[BigDecimal, Boolean] = at { _: BigDecimal => false }
     implicit val atString: Case.Aux[String, Boolean] = at { _: String => false }
+    implicit val atBool: Case.Aux[Boolean, Boolean] = at { _: Boolean => false }
   }
 
   object RunnableArgumentToValueOption extends Poly1 {
     implicit val atField: Case.Aux[Field, Option[String]] = at { x: Field => Some(x.value) }
     implicit val atDouble: Case.Aux[BigDecimal, Option[String]] = at { _: BigDecimal => None }
     implicit val atString: Case.Aux[String, Option[String]] = at { _: String => None }
+    implicit val atBool: Case.Aux[Boolean, Option[String]] = at { _: Boolean => None }
   }
 }

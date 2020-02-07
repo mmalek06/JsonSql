@@ -11,6 +11,9 @@ object StringOps {
     def isString: Boolean =
       !isNumber && x.toBooleanOption.isEmpty
 
+    def isBoolean: Boolean =
+      x.toBooleanOption.nonEmpty
+
     def asJValue: JValue =
       if (!x.isEmpty && x.forall(_.isDigit)) JNumber(BigDecimal(x))
       else x
