@@ -9,13 +9,13 @@ import shapeless.{Coproduct, Poly1}
 
 class AvgFunction extends Runnable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean =
-    symbol == "avg" && args.length == 1 && args.head.fold(RunnableArgumentToBool)
+    symbol == "avg" && args.nonEmpty && args.head.fold(RunnableArgumentToBool)
 
-  def run(args: Seq[RunnableArgument], json: Option[JValue]): Option[RunnableArgument] =
+  def run(args: Seq[RunnableArgument], json: Option[JValue]): Option[(RunnableArgument, Int)] =
     if (json.isEmpty) None
     else
       args
-        .head
+        .last
         .fold(RunnableArgumentToValueOption)
         .map(fieldName => json.get.getValuesFor(fieldName.split("\\.")))
         .flatMap(values => {
@@ -27,7 +27,7 @@ class AvgFunction extends Runnable {
             }
 
             if (numbers.isEmpty) None
-            else Some(Coproduct[RunnableArgument](numbers.sum / numbers.length))
+            else Some(Coproduct[RunnableArgument](numbers.sum / numbers.length), 1)
           }
         })
 

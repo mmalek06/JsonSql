@@ -37,20 +37,28 @@ object FoldingStrategy {
           .map((key: String) => Right(Seq(key -> agg.last._2)))
           .getOrElse(Left("Expected alias, but none was found. Parsing aborted..."))
           .map(agg.init :+ _.head)
-      case p if hasOperator(p) => runOps(Infix2RpnArithmeticConverter.convert(p), json).map(agg :+ _.head)
+      case p if hasOperator(p) =>
+        val rpn = Infix2RpnArithmeticConverter.convert(p)
+        val result = runOps(rpn, json).map(x => agg :+ ("", Seq(Some(x))))
+
+        result
       case p => MappingStrategy(p, json).map(agg :+ _.head)
     }
 
   private def partition(tokens: Seq[Token]) = {
     val seed = PartitionsTuple(List.empty[Seq[Token]], Default)
     val nextAggregate = (aggregate: PartitionsTuple, token: Token) =>
-      aggregate.copy(partitionedTokens = aggregate.partitionedTokens :+ Seq(token))
+      aggregate.copy(partitionedTokens = aggregate.partitionedTokens :+ Seq(token), previousToken = token)
 
-    tokens.foldLeft(seed)((aggregate, token) =>
-      (aggregate.previousToken, token) match {
+    tokens.foldLeft(seed)((aggregate, token) => {
+      val p = (aggregate.previousToken, token)
+
+      p match {
         case (b: Bracket, _: Field) if !b.isOpening => nextAggregate(aggregate, token)
         case (b: Bracket, Function(_)) if !b.isOpening => nextAggregate(aggregate, token)
         case (_: FieldAlias, _: Field) => nextAggregate(aggregate, token)
+        case (_: FieldAlias, _: Function) => nextAggregate(aggregate, token)
+        case (_: FieldAlias, _: Constant) => nextAggregate(aggregate, token)
         case (_: Field, _: Field) => nextAggregate(aggregate, token)
         case (_: Field, Function(_)) => nextAggregate(aggregate, token)
         case (_, As) => nextAggregate(aggregate, token)
@@ -60,7 +68,7 @@ object FoldingStrategy {
         case _ => aggregate.copy(
           partitionedTokens = aggregate.partitionedTokens.init :+ (aggregate.partitionedTokens.last :+ token),
           previousToken = token)
-      }).partitionedTokens
+      }}).partitionedTokens
   }
 
   private def hasOperator(partition: Seq[Token]) =
@@ -77,7 +85,7 @@ object FoldingStrategy {
       case _ => false
     }
 
-  private def runOps(tokens: Seq[Token], json: JValue): Either[String, Map[String, Seq[Option[JValue]]]] =
+  private def runOps(tokens: Seq[Token], json: JValue): Either[String, JValue] =
     tokens.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((aggOrError, t) => (aggOrError, t) match {
       case (Right(aggregate), x: Constant) => Right(getConstant(aggregate, x))
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
@@ -85,8 +93,7 @@ object FoldingStrategy {
       case (Right(aggregate), x: Function) => runFunction(functions, aggregate, json, x)
       case _ => aggOrError
     }) match {
-      case Right(Seq(Inl(Field(name)), Inr(Inl(value)))) => Right(Map(name -> Seq(Some(value.toString.asJValue))))
-      case Right(_) => Left("Something went wrong...")
+      case Right(Seq(Inr(Inl(value)))) => Right(value.toString.asJValue)
       case Left(x) => Left(x)
     }
 

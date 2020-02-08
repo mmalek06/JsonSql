@@ -11,14 +11,24 @@ package object execution {
     operators
       .find(_.canRun(x.value, aggregate))
       .flatMap(_.run(aggregate))
-      .map(value => Right(aggregate :+ value))
+      .map(value => {
+        val (result, countArgsTaken) = value
+        val newAggregate = aggregate.dropRight(countArgsTaken) :+ result
+
+        Right(newAggregate)
+      })
       .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known runnable or the input was in bad format. Aborting..."))
 
   def runFunction(functions: Seq[runnables.Runnable], aggregate: Seq[RunnableArgument], json: JValue, x: Function): Either[String, Seq[RunnableArgument]] =
     functions
       .find(_.canRun(x.name, aggregate))
       .flatMap(_.run(aggregate, Some(json)))
-      .map(value => Right(aggregate :+ value))
+      .map(value => {
+        val (result, countArgsTaken) = value
+        val newAggregate = aggregate.dropRight(countArgsTaken) :+ result
+
+        Right(newAggregate)
+      })
       .getOrElse(Left(s"Couldn't run ${x.name} function, because it is not a known runnable or the input was in bad format. Aborting..."))
 
   def getConstant(aggregate: Seq[RunnableArgument], const: Constant): Seq[RunnableArgument] =

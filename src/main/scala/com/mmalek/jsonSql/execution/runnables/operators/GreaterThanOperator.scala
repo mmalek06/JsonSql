@@ -8,14 +8,16 @@ import shapeless.Coproduct
 
 class GreaterThanOperator extends Runnable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean =
-    symbol == ">" && args.length == 2 && args.forall(_.fold(IsNumeric))
+    symbol == ">" && args.length >= 2 && args.forall(_.fold(IsNumeric))
 
-  def run(args: Seq[RunnableArgument], json: Option[JValue] = None): Option[RunnableArgument] = {
+  def run(allArgs: Seq[RunnableArgument], json: Option[JValue] = None): Option[(RunnableArgument, Int)] = {
+    val args = allArgs.takeRight(2)
+
     if (args.forall(_.fold(IsNumeric)))
-      for {
+      (for {
         n1 <- args.head.fold(RunnableArgumentToNumber)
         n2 <- args.last.fold(RunnableArgumentToNumber)
-      } yield Coproduct[RunnableArgument](n1 > n2)
+      } yield Coproduct[RunnableArgument](n1 > n2)).map(r => (r, 2))
     else None
   }
 }

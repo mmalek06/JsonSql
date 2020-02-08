@@ -8,7 +8,7 @@ import com.mmalek.jsonSql.execution.{getConstant, runFunction, runOperator}
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
-import shapeless.{Coproduct, Inl}
+import shapeless.Coproduct
 
 object FoldingStrategy {
   private val conjunctions = Set[Token](Or, And)
@@ -25,6 +25,8 @@ object FoldingStrategy {
     val partitions = partitionFilters(rpn)
     val seed = Right(FilteringTuple(json, json, Seq.empty[RunnableArgument])).withLeft[String]
     val r = partitions.foldLeft(seed)((maybeAggregate, partition) => (maybeAggregate, partition) match {
+      case (Right(aggregate), t@(And | Or) :: Nil) =>
+
       case (Right(aggregate), p) =>
         val currentArgs = getCurrentArguments(json, p)
         val newAggregate = getNewAggregate(aggregate, currentArgs)
@@ -49,16 +51,8 @@ object FoldingStrategy {
     val currentArgs = partition.foldLeft(innerSeed)((innerAggregate, t) => (innerAggregate, t) match {
       case (Right(aggregate), x: Constant) => Right(getConstant(aggregate, x))
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
-      case (Right(aggregate), op: Operator) => runOperator(operators, aggregate, op) match {
-        case Right(Seq(Inl(_), x)) => Right(Seq(x))
-        case Right(_) => Left(s"Operator ${op.value} returned invalid value during filtering. Aborting...")
-        case x => x
-      }
-      case (Right(aggregate), x: Function) => runFunction(functions, aggregate, json, x) match {
-        case Right(Seq(Inl(_), x)) => Right(Seq(x))
-        case Right(_) => Left(s"Function ${x.name} returned invalid value during filtering. Aborting...")
-        case x => x
-      }
+      case (Right(aggregate), op: Operator) => runOperator(operators, aggregate, op)
+      case (Right(aggregate), x: Function) => runFunction(functions, aggregate, json, x)
       case (x@Left(_), _) => x
       case _ => Left("Unsupported WHERE clause format. Aborting...")
     })
