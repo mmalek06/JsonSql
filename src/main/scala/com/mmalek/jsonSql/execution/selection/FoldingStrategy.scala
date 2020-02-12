@@ -1,10 +1,11 @@
 package com.mmalek.jsonSql.execution.selection
 
+import com.mmalek.jsonSql.execution.addConstantToArguments
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnArithmeticConverter
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
-import com.mmalek.jsonSql.execution.runnables.functions.AvgFunction
-import com.mmalek.jsonSql.execution.runnables.operators.AddOperator
-import com.mmalek.jsonSql.execution.{getConstant, runFunction, runOperator}
+import com.mmalek.jsonSql.execution.runnables.selectables.Selectable
+import com.mmalek.jsonSql.execution.runnables.selectables.functions.AvgFunction
+import com.mmalek.jsonSql.execution.runnables.selectables.operators.AddOperator
 import com.mmalek.jsonSql.extensions.StringOps._
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
@@ -39,7 +40,7 @@ object FoldingStrategy {
           .map(agg.init :+ _.head)
       case p if hasOperator(p) =>
         val rpn = Infix2RpnArithmeticConverter.convert(p)
-        val result = runOps(rpn, json).map(x => agg :+ ("", Seq(Some(x))))
+        val result = runOps(rpn, json, operators, functions).map(x => agg :+ ("", Seq(Some(x))))
 
         result
       case p => MappingStrategy(p, json).map(agg :+ _.head)
@@ -50,10 +51,8 @@ object FoldingStrategy {
     val nextAggregate = (aggregate: PartitionsTuple, token: Token) =>
       aggregate.copy(partitionedTokens = aggregate.partitionedTokens :+ Seq(token), previousToken = token)
 
-    tokens.foldLeft(seed)((aggregate, token) => {
-      val p = (aggregate.previousToken, token)
-
-      p match {
+    tokens.foldLeft(seed)((aggregate, token) =>
+      (aggregate.previousToken, token) match {
         case (b: Bracket, _: Field) if !b.isOpening => nextAggregate(aggregate, token)
         case (b: Bracket, Function(_)) if !b.isOpening => nextAggregate(aggregate, token)
         case (_: FieldAlias, _: Field) => nextAggregate(aggregate, token)
@@ -68,7 +67,7 @@ object FoldingStrategy {
         case _ => aggregate.copy(
           partitionedTokens = aggregate.partitionedTokens.init :+ (aggregate.partitionedTokens.last :+ token),
           previousToken = token)
-      }}).partitionedTokens
+      }).partitionedTokens
   }
 
   private def hasOperator(partition: Seq[Token]) =
@@ -85,17 +84,41 @@ object FoldingStrategy {
       case _ => false
     }
 
-  private def runOps(tokens: Seq[Token], json: JValue): Either[String, JValue] =
+  private def runOps(tokens: Seq[Token], json: JValue, operators: Seq[Selectable], functions: Seq[Selectable]): Either[String, JValue] =
     tokens.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((aggOrError, t) => (aggOrError, t) match {
-      case (Right(aggregate), x: Constant) => Right(getConstant(aggregate, x))
+      case (Right(aggregate), x: Constant) => Right(addConstantToArguments(aggregate, x))
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
-      case (Right(aggregate), x: Operator) => runOperator(operators, aggregate, x)
+      case (Right(aggregate), x: Operator) => runOperator(operators, aggregate, json, x)
       case (Right(aggregate), x: Function) => runFunction(functions, aggregate, json, x)
       case _ => aggOrError
     }) match {
       case Right(Seq(Inr(Inl(value)))) => Right(value.toString.asJValue)
       case Left(x) => Left(x)
     }
+
+  private def runOperator(operators: Seq[Selectable], aggregate: Seq[RunnableArgument], json: JValue, x: Operator): Either[String, Seq[RunnableArgument]] =
+    operators
+      .find(_.canRun(x.value, aggregate))
+      .flatMap(_.run(aggregate, Some(json)))
+      .map(value => {
+        val (result, countArgsTaken) = value
+        val newAggregate = aggregate.dropRight(countArgsTaken) :+ result
+
+        Right(newAggregate)
+      })
+      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known runnable or the input was in bad format. Aborting..."))
+
+  private def runFunction(functions: Seq[Selectable], aggregate: Seq[RunnableArgument], json: JValue, x: Function): Either[String, Seq[RunnableArgument]] =
+    functions
+      .find(_.canRun(x.name, aggregate))
+      .flatMap(_.run(aggregate, Some(json)))
+      .map(value => {
+        val (result, countArgsTaken) = value
+        val newAggregate = aggregate.dropRight(countArgsTaken) :+ result
+
+        Right(newAggregate)
+      })
+      .getOrElse(Left(s"Couldn't run ${x.name} function, because it is not a known runnable or the input was in bad format. Aborting..."))
 
   private case class PartitionsTuple(partitionedTokens: Seq[Seq[Token]],
                                      previousToken: Token)

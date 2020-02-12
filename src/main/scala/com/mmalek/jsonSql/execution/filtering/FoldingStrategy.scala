@@ -1,10 +1,10 @@
 package com.mmalek.jsonSql.execution.filtering
 
+import com.mmalek.jsonSql.execution.addConstantToArguments
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnLogicalConverter
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
-import com.mmalek.jsonSql.execution.runnables.functions.AvgFunction
-import com.mmalek.jsonSql.execution.runnables.operators.{AddOperator, EqualOperator, GreaterThanOperator, NotEqualOperator}
-import com.mmalek.jsonSql.execution.{getConstant, runFunction, runOperator}
+import com.mmalek.jsonSql.execution.runnables.filterables.operators.EqualOperator
+import com.mmalek.jsonSql.execution.runnables.selectables.functions.AvgFunction
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
@@ -13,10 +13,7 @@ import shapeless.Coproduct
 object FoldingStrategy {
   private val conjunctions = Set[Token](Or, And)
   private val operators = Seq(
-    new AddOperator,
-    new GreaterThanOperator,
-    new EqualOperator,
-    new NotEqualOperator)
+    new EqualOperator)
   private val functions = Seq(
     new AvgFunction)
 
@@ -26,7 +23,7 @@ object FoldingStrategy {
     val seed = Right(FilteringTuple(json, json, Seq.empty[RunnableArgument])).withLeft[String]
     val r = partitions.foldLeft(seed)((maybeAggregate, partition) => (maybeAggregate, partition) match {
       case (Right(aggregate), t@(And | Or) :: Nil) =>
-
+        Right(aggregate)
       case (Right(aggregate), p) =>
         val currentArgs = getCurrentArguments(json, p)
         val newAggregate = getNewAggregate(aggregate, currentArgs)
@@ -46,13 +43,23 @@ object FoldingStrategy {
       case _ => aggregate.init :+ (aggregate.last :+ t)
     })
 
+  // it's not my fault that the result of this method will be a sequence of partitions built from a partition.
+  // also: partitionPartition is an awesome name! :)
+  private def partitionPartition(partition: Seq[Token]) =
+    partition.foldLeft(Seq.empty[Seq[Token]])((aggregate, t) => t match {
+      case x@(Function(_) | Operator(_)) => aggregate.init :+ (aggregate.last :+ x) :+ Seq[Token]()
+      case x => aggregate.init :+ (aggregate.last :+ x)
+    })
+
   private def getCurrentArguments(json: JValue, partition: Seq[Token]) = {
     val innerSeed = Right(Seq.empty[RunnableArgument]).withLeft[String]
     val currentArgs = partition.foldLeft(innerSeed)((innerAggregate, t) => (innerAggregate, t) match {
-      case (Right(aggregate), x: Constant) => Right(getConstant(aggregate, x))
+      case (Right(aggregate), x: Constant) => Right(addConstantToArguments(aggregate, x))
       case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
-      case (Right(aggregate), op: Operator) => runOperator(operators, aggregate, op)
-      case (Right(aggregate), x: Function) => runFunction(functions, aggregate, json, x)
+      case (Right(aggregate), op: Operator) =>
+        //runOperator(operators, aggregate, json, op)
+      case (Right(aggregate), x: Function) =>
+        //runFunction(functions, aggregate, json, x)
       case (x@Left(_), _) => x
       case _ => Left("Unsupported WHERE clause format. Aborting...")
     })

@@ -1,12 +1,12 @@
-package com.mmalek.jsonSql.execution.runnables.operators
+package com.mmalek.jsonSql.execution.runnables.selectables.operators
 
 import com.mmalek.jsonSql.execution.runnables.Folders._
-import com.mmalek.jsonSql.execution.runnables.Runnable
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
+import com.mmalek.jsonSql.execution.runnables.selectables.Selectable
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import shapeless.Coproduct
 
-class GreaterThanOperator extends Runnable {
+class GreaterThanOperator extends Selectable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean =
     symbol == ">" && args.length >= 2 && args.forall(_.fold(IsNumeric))
 

@@ -15,10 +15,10 @@ object App {
       s"""
         SELECT (2 + 3) AS "avgAge1", AVG("items.age"), "items.age", "items.name" AS "name"
         FROM ##json##
-        WHERE AVG("items.age") > 1 AND "items.address.city" != 'Gdańsk' OR "items.isEmployee" = false AND true = true OR true = false
+        WHERE AVG("items.age") = 15
         """
     //SELECT (2 + 3) * (4 + 1) AS "avgAge", AVG("items.age"), "items.age", "items.name" AS "name"
-    //WHERE AVG("items.age") > 1 AND "items.address.city" != 'Gdańsk' OR "items.isEmployee" = false AND true = true
+    //WHERE AVG("items.age") > 1 AND "items.address.city" != 'Gdańsk' OR "items.isEmployee" = false AND true = true OR true = false
     val data = runJsonSql(query, SampleJson.list)
 
     println("ASDf")

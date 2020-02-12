@@ -1,16 +1,16 @@
-package com.mmalek.jsonSql.execution.runnables.operators
+package com.mmalek.jsonSql.execution.runnables.selectables.operators
 
 import com.mmalek.jsonSql.execution.runnables.Folders._
-import com.mmalek.jsonSql.execution.runnables.Runnable
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
+import com.mmalek.jsonSql.execution.runnables.selectables.Selectable
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import shapeless.Coproduct
 
-class NotEqualOperator extends Runnable {
+class NotEqualOperator extends Selectable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean =
     symbol == "!=" && args.length >= 2
 
-  def run(allArgs: Seq[RunnableArgument], json: Option[JValue]): Option[(RunnableArgument, Int)] = {
+  def run(allArgs: Seq[RunnableArgument], json: Option[JValue] = None): Option[(RunnableArgument, Int)] = {
     val args = allArgs.takeRight(2)
 
     if (args.forall(_.fold(IsNumeric)))
