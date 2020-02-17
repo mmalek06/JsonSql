@@ -43,7 +43,7 @@ object FoldingStrategy {
         val result = runOps(rpn, json, operators, functions).map(x => agg :+ ("", Seq(Some(x))))
 
         result
-      case p => MappingStrategy(p, json).map(agg :+ _.head)
+      case p => MappingStrategy(json, p).map(agg :+ _.head)
     }
 
   private def partition(tokens: Seq[Token]) = {

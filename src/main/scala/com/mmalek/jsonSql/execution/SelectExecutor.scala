@@ -12,7 +12,7 @@ class SelectExecutor(actions: Map[Token, Seq[Token]]) {
     val info = getSelectionInfo(tokens)
 
     if (info.hasFunctions || info.hasOperators) SelectionFoldingStrategy(tokens, json)
-    else MappingStrategy(tokens, json)
+    else MappingStrategy(json, tokens)
   }
 
   def from(): Option[Json] =

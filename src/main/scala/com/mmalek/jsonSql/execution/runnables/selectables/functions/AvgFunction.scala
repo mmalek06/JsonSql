@@ -17,7 +17,7 @@ class AvgFunction extends Selectable {
       args
         .last
         .fold(RunnableArgumentToValueOption)
-        .map(fieldName => json.get.getValuesFor(fieldName.split("\\.")))
+        .map(fieldName => json.get.getValues(fieldName.split("\\.")))
         .flatMap(values => {
           if(hasInvalidValues(values)) None
           else {

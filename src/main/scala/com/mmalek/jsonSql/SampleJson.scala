@@ -64,8 +64,10 @@ object SampleJson {
                   "surname":"Murphy",
                   "fullname":"Karen Grimes",
                   "isEmployee":true,
+                  "address": {
                       "street": "Obrońców Wybrzeża",
                       "city": "Gdańsk"
+                  }
               },
               {
                   "id":8,

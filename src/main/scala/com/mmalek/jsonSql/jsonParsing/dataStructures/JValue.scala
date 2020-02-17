@@ -40,12 +40,12 @@ case class JField(name: String, value: JValue) extends JValue {
 }
 
 //noinspection TypeAnnotation
-case class JObject(obj: Seq[JField]) extends JValue {
+case class JObject(fields: Seq[JField]) extends JValue {
   override type Values = Map[String, Any]
-  override def values = Map() ++ obj.map(_.values : (String, Any))
+  override def values = Map() ++ fields.map(_.values : (String, Any))
 
   override def equals(that: Any): Boolean = that match {
-    case o: JObject => Set(obj.toArray: _*) == Set(o.obj.toArray: _*)
+    case o: JObject => Set(fields.toArray: _*) == Set(o.fields.toArray: _*)
     case _ => false
   }
 }

@@ -13,26 +13,14 @@ class EqualOperator extends Filterable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean =
     selectable.canRun(symbol, args)
 
-  def run(allArgs: Seq[RunnableArgument], json: JValue): (Option[Seq[Boolean]], Int, JValue) = {
+  def run(allArgs: Seq[RunnableArgument], json: JValue): JValue = {
     val args = allArgs.takeRight(2)
 
-    if (args.forall(_.fold(IsNumeric))) selectable.runNumerics(args).map(defaultRun(_, json)).getOrElse(errorResult)
-    else if (args.forall(_.fold(IsString))) selectable.runStrings(args).map(defaultRun(_, json)).getOrElse(errorResult)
-    else if (args.forall(_.fold(IsBoolean))) selectable.runBools(args).map(defaultRun(_, json)).getOrElse(errorResult)
-    else if (args.exists(_.fold(IsField))) (runFields(args, json), 2, json)
-    else (None, 2, json)
-  }
-
-  private def errorResult = (None, 0, JNull)
-
-  private def defaultRun(t: (RunnableArgument, Int), json: JValue) = {
-    val (arg, countArgs) = t
-
-    arg.fold(RunnableArgumentToBoolean).map(success => json match {
-      case JArray(objects) => (Some(objects.map(_ => success)), countArgs, json)
-      case JObject(fields) => (Some(fields.map(_ => success)), countArgs, json)
-      case _ => errorResult
-    }).getOrElse(errorResult)
+    if (args.forall(_.fold(IsNumeric))) selectable.runNumerics(args).map(_ => json).getOrElse(JNull)
+    else if (args.forall(_.fold(IsString))) selectable.runStrings(args).map(_ => json).getOrElse(JNull)
+    else if (args.forall(_.fold(IsBoolean))) selectable.runBools(args).map(_ => json).getOrElse(JNull)
+    //else if (args.exists(_.fold(IsField))) (runFields(args, json), 2, json)
+    else JNull
   }
 
   private def runFields(args: Seq[RunnableArgument], json: JValue) = {
@@ -40,13 +28,13 @@ class EqualOperator extends Filterable {
     val maybeArgs =
       for {
         a1 <- argsWithIndices.find(_._1.fold(IsField))
-        jValues1 <- a1._1.fold(RunnableArgumentToValueOption).map(fieldName => json.getValuesFor(fieldName.split("\\.")))
+        jValues1 <- a1._1.fold(RunnableArgumentToValueOption).map(fieldName => json.getValues(fieldName.split("\\.")))
         a2 <- argsWithIndices.find(a => a._2 != a1._2)
       } yield (jValues1, a2._1)
 
     maybeArgs.map(t => {
       val (jValues1, arg2Wrapper) = t
-      val jValues2 = arg2Wrapper.fold(RunnableArgumentToValueOption).map(fieldName => json.getValuesFor(fieldName.split("\\.")))
+      val jValues2 = arg2Wrapper.fold(RunnableArgumentToValueOption).map(fieldName => json.getValues(fieldName.split("\\.")))
       val strVal = arg2Wrapper.fold(RunnableArgumentToString)
       val numVal = arg2Wrapper.fold(RunnableArgumentToNumber)
       val boolVal = arg2Wrapper.fold(RunnableArgumentToBoolean)
