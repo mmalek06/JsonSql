@@ -11,8 +11,9 @@ object App {
       s"""
         SELECT "items.id" AS "id"
         FROM ##json##
-        WHERE "items.address.city" = 'Gdynia' OR "items.age" = 16
+        WHERE "items.id" = "items.age"
         """
+//      WHERE "items.address.city" = 'Gdynia' OR "items.age" = 16
 //      s"""
 //        SELECT (2 + 3) AS "avgAge1", AVG("items.age"), "items.age", "items.name" AS "name"
 //        FROM ##json##

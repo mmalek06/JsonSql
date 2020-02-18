@@ -30,9 +30,11 @@ object JValueOps {
       else x match {
         case JObject(fields) =>
           fields.find(_.name == path.head) match {
-            case Some(field) if path.tail.isEmpty => JObject(Seq(field))
+            case Some(_) if path.tail.isEmpty => JObject(fields)
             case Some(field) =>
-              JObject(Seq(JField(field.name, walkParented(path.tail, field.value))))
+              val otherFields = fields.filterNot(_.name == path.head)
+
+              JObject(Seq(JField(field.name, walkParented(path.tail, field.value))) ++ otherFields)
             case _ => JNull
           }
         case JArray(arr) => JArray(arr.map(v => walkParented(path, v)))

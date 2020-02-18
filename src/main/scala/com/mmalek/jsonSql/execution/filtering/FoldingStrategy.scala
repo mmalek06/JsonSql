@@ -3,6 +3,7 @@ package com.mmalek.jsonSql.execution.filtering
 import com.mmalek.jsonSql.execution.addConstantToArguments
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnLogicalConverter
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
+import com.mmalek.jsonSql.execution.runnables.filterables.Filterable
 import com.mmalek.jsonSql.execution.runnables.filterables.operators.EqualOperator
 import com.mmalek.jsonSql.execution.runnables.selectables.functions.AvgFunction
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
@@ -38,9 +39,9 @@ object FoldingStrategy {
   }
 
   private def getJsonVersionsMatchingFilters(filters: Seq[Token], json: JValue) =
-    filters collect {
+    (filters collect {
       case x: Field => x
-    } map (f => json.getParentedValues(f.value.split("\\.")))
+    } map (f => (f.value, json.getParentedValues(f.value.split("\\."))))).toMap
 
   private def partitionFilters(tokens: Seq[Token]) =
     tokens.foldLeft(Seq.empty[Seq[Token]])((aggregate, t) => (aggregate, t) match {
@@ -58,13 +59,13 @@ object FoldingStrategy {
       case x => aggregate.init :+ (aggregate.last :+ x)
     })
 
-//  private def getCurrentArguments(json: JValue, partition: Seq[Token]) = {
+//  private def getCurrentArguments(json: JValue, jsons: Map[String, JValue], partition: Seq[Token]) = {
 //    val innerSeed = Right(Seq.empty[RunnableArgument]).withLeft[String]
 //    val currentArgs = partition.foldLeft(innerSeed)((innerAggregate, t) => (innerAggregate, t) match {
 //      case (Right(aggregate), x: Constant) => Right(addConstantToArguments(aggregate, x))
 //      case (Right(aggregate), x: Field) => Right(aggregate :+ Coproduct[RunnableArgument](x))
 //      case (Right(aggregate), op: Operator) =>
-//        //runOperator(operators, aggregate, json, op)
+//        runOperator(operators, aggregate, json, jsons, op)
 //      case (Right(aggregate), x: Function) =>
 //        //runFunction(functions, aggregate, json, x)
 //      case (x@Left(_), _) => x
@@ -79,6 +80,18 @@ object FoldingStrategy {
       case Right(args) => Right(aggregate.copy(currentArguments = args))
       case Left(x) => Left(x)
     }
+
+//  private def runOperator(operators: Seq[Filterable], aggregate: Seq[RunnableArgument], json: JValue, jsons: Map[String, JValue], x: Operator) =
+//    operators
+//      .find(_.canRun(x.value, aggregate))
+//      .flatMap(_.run(aggregate, Some(json)))
+//      .map(value => {
+//        val (result, countArgsTaken) = value
+//        val newAggregate = aggregate.dropRight(countArgsTaken) :+ result
+//
+//        Right(newAggregate)
+//      })
+//      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known filtering operator or the input was in bad format. Aborting..."))
 
   private case class FilteringTuple(initialJson: JValue,
                                     filteredJson: JValue,

@@ -96,7 +96,7 @@ object FoldingStrategy {
       case Left(x) => Left(x)
     }
 
-  private def runOperator(operators: Seq[Selectable], aggregate: Seq[RunnableArgument], json: JValue, x: Operator): Either[String, Seq[RunnableArgument]] =
+  private def runOperator(operators: Seq[Selectable], aggregate: Seq[RunnableArgument], json: JValue, x: Operator) =
     operators
       .find(_.canRun(x.value, aggregate))
       .flatMap(_.run(aggregate, Some(json)))
@@ -106,9 +106,9 @@ object FoldingStrategy {
 
         Right(newAggregate)
       })
-      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known runnable or the input was in bad format. Aborting..."))
+      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known selection operator or the input was in bad format. Aborting..."))
 
-  private def runFunction(functions: Seq[Selectable], aggregate: Seq[RunnableArgument], json: JValue, x: Function): Either[String, Seq[RunnableArgument]] =
+  private def runFunction(functions: Seq[Selectable], aggregate: Seq[RunnableArgument], json: JValue, x: Function) =
     functions
       .find(_.canRun(x.name, aggregate))
       .flatMap(_.run(aggregate, Some(json)))
@@ -118,7 +118,7 @@ object FoldingStrategy {
 
         Right(newAggregate)
       })
-      .getOrElse(Left(s"Couldn't run ${x.name} function, because it is not a known runnable or the input was in bad format. Aborting..."))
+      .getOrElse(Left(s"Couldn't run ${x.name} function, because it is not a known selection function or the input was in bad format. Aborting..."))
 
   private case class PartitionsTuple(partitionedTokens: Seq[Seq[Token]],
                                      previousToken: Token)
