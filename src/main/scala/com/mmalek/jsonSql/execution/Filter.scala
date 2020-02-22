@@ -1,15 +1,16 @@
 package com.mmalek.jsonSql.execution
 
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnLogicalConverter
+import com.mmalek.jsonSql.execution.runnables.Folders.RunnableArgumentToBoolean
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.filterables.Filterable
 import com.mmalek.jsonSql.execution.runnables.filterables.operators.EqualOperator
 import com.mmalek.jsonSql.execution.runnables.selectables.functions.AvgFunction
-import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JBool, JField, JNothing, JNull, JNumber, JObject, JString, JValue}
+import com.mmalek.jsonSql.extensions.JValueOps._
+import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
 import shapeless.Coproduct
-import com.mmalek.jsonSql.extensions.JValueOps._
 
 import scala.annotation.tailrec
 
@@ -27,20 +28,9 @@ object Filter {
     maxPaths match {
       case Right(value) =>
         val partitions = partitionFilters(rpn)
-//        val filterFunction = buildFilteringFunction(value, partitions)
-//        val seed = Right(FilteringTuple(json, json, Seq.empty[RunnableArgument])).withLeft[String]
-        //    val r = partitions.foldLeft(seed)((maybeAggregate, partition) => (maybeAggregate, partition) match {
-        //      case (Right(aggregate), t@(And | Or) :: Nil) =>
-        //        Right(aggregate)
-        //      case (Right(aggregate), p) =>
-        //        val currentArgs = getCurrentArguments(json, p)
-        //        val newAggregate = getNewAggregate(aggregate, currentArgs)
-        //
-        //        newAggregate
-        //      case (Left(x), _) => Left(x)
-        //    })
+        val filterFunction = buildFilteringFunction(partitions)
 
-        Right(json)
+        Right(filterFunction(json, value))
       case Left(error) => Left(error)
     }
   }
@@ -72,20 +62,6 @@ object Filter {
         else pickPath(xs, nextParts.tail, calculatedPath :+ x)
     }
 
-  private def buildFilteringFunction(maxPath: Seq[String], filterPartitions: Seq[Seq[Token]]) = {
-    def func(json: JValue, rootsPath: Seq[String]): JValue =
-      (json, rootsPath) match {
-        case (JObject(fields), x :: xs) => JObject(fields.flatMap {
-          case f if f.name == x => Some(JField(f.name, func(f, xs)))
-          case _ => None
-        })
-        case (JArray(arr), path) => JArray(arr.map(func(_, path)))
-        case (JObject(fields), Nil) =>
-
-      }
-
-  }
-
   private def partitionFilters(tokens: Seq[Token]) =
     tokens.foldLeft(Seq.empty[Seq[Token]])((aggregate, t) => (aggregate, t) match {
       case (_, t) if conjunctions.contains(t) => aggregate :+ Seq(t)
@@ -93,6 +69,40 @@ object Filter {
       case (Nil, _) => Seq(Seq(t))
       case _ => aggregate.init :+ (aggregate.last :+ t)
     })
+
+  private def buildFilteringFunction(filterPartitions: Seq[Seq[Token]]) = {
+    val func: (JValue, Seq[String]) => JValue = (json: JValue, rootsPath: Seq[String]) =>
+      (json, rootsPath) match {
+        case (JObject(fields), x :: xs) => JObject(fields.flatMap {
+          case f if f.name == x => Some(JField(f.name, func(f, xs)))
+          case _ => None
+        })
+        case (JArray(arr), path) => JArray(arr.map(func(_, path)))
+        case (filterableJson, Nil) =>
+          filterPartitions.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((maybeAggregate, partition) => (maybeAggregate, partition) match {
+            case (Right(x :: y :: _), And :: Nil) => runConjunction(x, y, _ && _)
+            case (Right(x :: y :: _), Or :: Nil) => runConjunction(x, y, _ || _)
+            case (Right(_), p) => getCurrentArguments(filterableJson, p)
+            case (Left(x), _) => Left(x)
+          }) match {
+            case Right(x :: Nil) =>
+              if (x.fold(RunnableArgumentToBoolean).getOrElse(false)) filterableJson
+              else JNull
+            case _ => JNull
+          }
+      }
+
+    func
+  }
+
+  private def runConjunction(x: RunnableArgument, y: RunnableArgument, op: (Boolean, Boolean) => Boolean) =
+    (for {
+      arg1 <- x.fold(RunnableArgumentToBoolean)
+      arg2 <- y.fold(RunnableArgumentToBoolean)
+    } yield op(arg1, arg2)) match {
+      case None => Left(s"Couldn't calculate boolean result from passed filter expressions. Expressions were: $x, $y. Aborting...")
+      case Some(value) => Right(Seq(Coproduct[RunnableArgument](value)))
+    }
 
   private def getCurrentArguments(json: JValue, partition: Seq[Token]) = {
     val seed = Right(Seq.empty[RunnableArgument]).withLeft[String]

@@ -12,7 +12,7 @@ class EqualOperator extends Filterable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean =
     selectable.canRun(symbol, args)
 
-  def run(allArgs: Seq[RunnableArgument], json: JValue, fieldMappedJsonVersions: Map[String, JValue]): Boolean = {
+  def run(allArgs: Seq[RunnableArgument], json: JValue): Boolean = {
     val args = allArgs.takeRight(2)
 
     if (args.forall(_.fold(IsNumeric))) selectable.runNumerics(args).exists(_._1.fold(RunnableArgumentToBoolean).get)
@@ -22,29 +22,29 @@ class EqualOperator extends Filterable {
     else false
   }
 
-  private def runFields(args: Seq[RunnableArgument], json: JValue, fieldMappedJsonVersions: Map[String, JValue]) = {
-    val argsWithIndices = args.zipWithIndex
-    val maybeArgs =
-      (for {
-        a1 <- argsWithIndices.find(_._1.fold(IsField))
-        jValues1 <- a1._1.fold(RunnableArgumentToValueOption)
-        a2 <- argsWithIndices.find(a => a._2 != a1._2)
-        maybeJValues2 = a2._1.fold(RunnableArgumentToValueOption)
-      } yield (jValues1, a2._1, maybeJValues2)).map {
-        case (fieldName1, _, Some(fieldName2)) if !fieldsRootedAtTheSameParent(fieldName1, fieldName2) =>
-          Left(s"Couldn't calculate equality of $fieldName1 and $fieldName2. In order to compare values, they need to belong to the same parent. Aborting...")
-        case (fieldName1, _, Some(fieldName2)) =>
-          val (longerName, shorterName) = if (fieldName1 >= fieldName2) (fieldName1, fieldName2) else (fieldName2, fieldName1)
-          val (longerPath, shorterPath) = getOrderedPaths(fieldName1, fieldName2)
-          val first = fieldMappedJsonVersions.get(shorterName)
-          val second = fieldMappedJsonVersions.get(longerName)
-          val pathUpToDivergence = longerPath.intersect(shorterPath)
-        case (fieldName, arg, _) =>
-          val version = fieldMappedJsonVersions.get(fieldName)
-          val strVal = arg.fold(RunnableArgumentToString)
-          val numVal = arg.fold(RunnableArgumentToNumber)
-          val boolVal = arg.fold(RunnableArgumentToBoolean)
-      }
+//  private def runFields(args: Seq[RunnableArgument], json: JValue, fieldMappedJsonVersions: Map[String, JValue]) = {
+//    val argsWithIndices = args.zipWithIndex
+//    val maybeArgs =
+//      (for {
+//        a1 <- argsWithIndices.find(_._1.fold(IsField))
+//        jValues1 <- a1._1.fold(RunnableArgumentToValueOption)
+//        a2 <- argsWithIndices.find(a => a._2 != a1._2)
+//        maybeJValues2 = a2._1.fold(RunnableArgumentToValueOption)
+//      } yield (jValues1, a2._1, maybeJValues2)).map {
+//        case (fieldName1, _, Some(fieldName2)) if !fieldsRootedAtTheSameParent(fieldName1, fieldName2) =>
+//          Left(s"Couldn't calculate equality of $fieldName1 and $fieldName2. In order to compare values, they need to belong to the same parent. Aborting...")
+//        case (fieldName1, _, Some(fieldName2)) =>
+//          val (longerName, shorterName) = if (fieldName1 >= fieldName2) (fieldName1, fieldName2) else (fieldName2, fieldName1)
+//          val (longerPath, shorterPath) = getOrderedPaths(fieldName1, fieldName2)
+//          val first = fieldMappedJsonVersions.get(shorterName)
+//          val second = fieldMappedJsonVersions.get(longerName)
+//          val pathUpToDivergence = longerPath.intersect(shorterPath)
+//        case (fieldName, arg, _) =>
+//          val version = fieldMappedJsonVersions.get(fieldName)
+//          val strVal = arg.fold(RunnableArgumentToString)
+//          val numVal = arg.fold(RunnableArgumentToNumber)
+//          val boolVal = arg.fold(RunnableArgumentToBoolean)
+//      }
 
 
 //    val argsWithIndices = args.zipWithIndex
@@ -70,7 +70,7 @@ class EqualOperator extends Filterable {
 //        case _ => jValues1.map(_ => false)
 //      }
 //    })
-  }
+//  }
 
   private def fieldsRootedAtTheSameParent(fieldName1: String, fieldName2: String) = {
     val (longer, shorter) = getOrderedPaths(fieldName1, fieldName2)

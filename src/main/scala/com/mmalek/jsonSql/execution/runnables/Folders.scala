@@ -41,7 +41,7 @@ object Folders {
     implicit val atString: Case.Aux[String, Option[BigDecimal]] = at { _: String => None }
     implicit val atField: Case.Aux[Field, Option[BigDecimal]] = at { _: Field => None }
     implicit val atBool: Case.Aux[Boolean, Option[BigDecimal]] = at { _: Boolean => None }
-    implicit val atUnit: Case.Aux[Unit, Option[Boolean]] = at { _: Unit => None }
+    implicit val atUnit: Case.Aux[Unit, Option[BigDecimal]] = at { _: Unit => None }
   }
 
   object RunnableArgumentToString extends Poly1 {
@@ -49,7 +49,7 @@ object Folders {
     implicit val atDouble: Case.Aux[BigDecimal, Option[String]] = at { _: BigDecimal => None }
     implicit val atField: Case.Aux[Field, Option[String]] = at { _: Field => None }
     implicit val atBool: Case.Aux[Boolean, Option[String]] = at { _: Boolean => None }
-    implicit val atUnit: Case.Aux[Unit, Option[Boolean]] = at { _: Unit => None }
+    implicit val atUnit: Case.Aux[Unit, Option[String]] = at { _: Unit => None }
   }
 
   object RunnableArgumentToBoolean extends Poly1 {
@@ -65,7 +65,7 @@ object Folders {
     implicit val atBool: Case.Aux[Boolean, Option[Field]] = at { _: Boolean => None }
     implicit val atString: Case.Aux[String, Option[Field]] = at { _: String => None }
     implicit val atDouble: Case.Aux[BigDecimal, Option[Field]] = at { _: BigDecimal => None }
-    implicit val atUnit: Case.Aux[Unit, Option[Boolean]] = at { _: Unit => None }
+    implicit val atUnit: Case.Aux[Unit, Option[Field]] = at { _: Unit => None }
   }
 
   object RunnableArgumentToValueOption extends Poly1 {
@@ -73,6 +73,6 @@ object Folders {
     implicit val atDouble: Case.Aux[BigDecimal, Option[String]] = at { _: BigDecimal => None }
     implicit val atString: Case.Aux[String, Option[String]] = at { _: String => None }
     implicit val atBool: Case.Aux[Boolean, Option[String]] = at { _: Boolean => None }
-    implicit val atUnit: Case.Aux[Unit, Option[Boolean]] = at { _: Unit => None }
+    implicit val atUnit: Case.Aux[Unit, Option[String]] = at { _: Unit => None }
   }
 }
