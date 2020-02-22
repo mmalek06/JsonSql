@@ -1,7 +1,7 @@
 package com.mmalek.jsonSql.execution
 
-import com.mmalek.jsonSql.execution.filtering.{FoldingStrategy => FilteringFoldingStrategy}
 import com.mmalek.jsonSql.execution.selection.{MappingStrategy, FoldingStrategy => SelectionFoldingStrategy}
+import com.mmalek.jsonSql.execution.{Filter => DoFilter}
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token._
@@ -21,10 +21,10 @@ class SelectExecutor(actions: Map[Token, Seq[Token]]) {
       case _ => None
     }
 
-  def where(json: JValue): JValue =
+  def where(json: JValue): Either[String, JValue] =
     actions.get(Where) match {
-      case Some(value) if value.nonEmpty => FilteringFoldingStrategy(value, json)
-      case _ => json
+      case Some(value) if value.nonEmpty => DoFilter(value, json)
+      case _ => Right(json)
     }
 
   private def getSelectionInfo(tokens: Seq[Token]) =

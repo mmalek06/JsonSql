@@ -11,7 +11,7 @@ object App {
       s"""
         SELECT "items.id" AS "id"
         FROM ##json##
-        WHERE "items.id" = "items.age"
+        WHERE "items.age" = 15 AND "items.address.city" = 'Gdańsk' OR "items.isEmployee" = false OR "items.age" = "items.id"
         """
 //      WHERE "items.address.city" = 'Gdynia' OR "items.age" = 16
 //      s"""

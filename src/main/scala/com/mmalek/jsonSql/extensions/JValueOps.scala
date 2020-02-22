@@ -6,7 +6,8 @@ object JValueOps {
   implicit class JValueExtensions(val json: JValue) {
     def getValues(path: Seq[String]): Seq[Option[JValue]] = walk(path, json)
 
-    def getParentedValues(path: Seq[String]): JValue = walkParented(path, json)
+    def filter(f: JValue => Boolean): JValue =
+      ???
 
     private def walk(path: Seq[String], x: JValue): Seq[Option[JValue]] =
       if (path.isEmpty) Seq(None)
@@ -25,7 +26,7 @@ object JValueOps {
           Seq(Some(x))
       }
 
-    def walkParented(path: Seq[String], x: JValue): JValue =
+    private def walkParented(path: Seq[String], x: JValue): JValue =
       if (path.isEmpty) JNull
       else x match {
         case JObject(fields) =>

@@ -1,8 +1,10 @@
 package com.mmalek.jsonSql.execution.runnables
 
 import com.mmalek.jsonSql.sqlParsing.Token.Field
-import shapeless.{:+:, CNil}
+import shapeless._
+import shapeless.syntax.singleton._
 
 object Types {
-  type RunnableArgument = Field :+: BigDecimal :+: String :+: Boolean :+: CNil
+  val undefined = "undefined".narrow
+  type RunnableArgument = Field :+: BigDecimal :+: String :+: Boolean :+: Unit :+: CNil
 }

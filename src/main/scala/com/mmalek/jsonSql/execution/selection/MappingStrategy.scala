@@ -9,7 +9,6 @@ import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field, FieldAlias}
 object MappingStrategy {
   def apply(json: JValue, tokens: Seq[Token]): Either[String, Map[String, Seq[Option[JValue]]]] = {
     val rawValues = tokens.flatMap(getValues(json, _)).toMap
-    var pvalues = tokens.flatMap(x(json, _))
     val aliases = findAliases(tokens)
     val aliasedValues = rawValues.map(pair => aliases.get(pair._1).map(alias => (alias, pair._2)).getOrElse(pair))
 
@@ -19,13 +18,6 @@ object MappingStrategy {
   private def getValues(value: JValue, token: Token) =
     token match {
       case t: Field => Some(t.value -> value.getValues(t.value.split("\\.")))
-      case t: Constant => Some(t.value -> Seq(Some(t.value.asJValue)))
-      case _ => None
-    }
-
-  private def x(value: JValue, token: Token) =
-    token match {
-      case t: Field => Some(t.value -> value.getParentedValues(t.value.split("\\.")))
       case t: Constant => Some(t.value -> Seq(Some(t.value.asJValue)))
       case _ => None
     }

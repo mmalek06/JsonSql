@@ -19,9 +19,15 @@ package object jsonSql {
         if (completeTokens.head == Select) {
           val actions = getSelectionActions(completeTokens)
 
-          if (completeTokens.contains(Where)) actions.from().map(j => actions.select(actions.where(j.value)))
-            .getOrElse(Left("Invalid json input. Parsing aborted..."))
-          else actions.from().map(j => actions.select(j.value)).getOrElse(Left("Invalid json input. Parsing aborted..."))
+          actions.from() match {
+            case Some(from) =>
+              if (completeTokens.contains(Where)) actions.where(from.value) match {
+                case Right(value) => actions.select(value)
+                case Left(error) => Left(error)
+              }
+              else actions.select(from.value)
+            case _ => Left("Invalid json input. Parsing aborted...")
+          }
         } else Right(Map.empty[String, Seq[Option[JValue]]])
     }
   }

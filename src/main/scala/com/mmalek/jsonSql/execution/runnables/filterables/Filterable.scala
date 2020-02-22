@@ -5,7 +5,7 @@ import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 
 trait Filterable {
   def canRun(symbol: String, args: Seq[RunnableArgument]): Boolean
-  def run(args: Seq[RunnableArgument], json: JValue, fieldMappedJsonVersions: Map[String, JValue]): JValue
+  def run(args: Seq[RunnableArgument], json: JValue): Boolean
 
   case class SelectableResult(result: RunnableArgument, countArgsTaken: Int)
 }
