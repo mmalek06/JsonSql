@@ -81,6 +81,7 @@ object Filter {
         })
         case (JArray(arr), path) => JArray(arr.map(func(_, path)))
         case (JObject(fields), Nil) =>
+
       }
 
   }
@@ -93,21 +94,13 @@ object Filter {
       case _ => aggregate.init :+ (aggregate.last :+ t)
     })
 
-  // it's not my fault that the result of this method will be a sequence of partitions built from a partition.
-  // also: partitionPartition is an awesome name! :)
-  private def partitionPartition(partition: Seq[Token]) =
-    partition.foldLeft(Seq.empty[Seq[Token]])((aggregate, t) => t match {
-      case x@(Function(_) | Operator(_)) => aggregate.init :+ (aggregate.last :+ x) :+ Seq[Token]()
-      case x => aggregate.init :+ (aggregate.last :+ x)
-    })
-
   private def getCurrentArguments(json: JValue, partition: Seq[Token]) = {
     val seed = Right(Seq.empty[RunnableArgument]).withLeft[String]
     val currentArgs = partition.foldLeft(seed)((innerAggregate, t) => (innerAggregate, t) match {
       case (Right(aggregate), x: Constant) => Right(addConstantToArguments(aggregate, x))
-      case (Right(aggregate), x: Field) => Right(addFieldValueToArguments(json, aggregate, x))
+      case (Right(aggregate), x: Field) => addFieldValueToArguments(json, aggregate, x)
       case (Right(aggregate), op: Operator) => runOperator(operators, aggregate, json, op)
-      case (Right(aggregate), x: Function) => Left("Running functions inside where clauses is not supported yet. Aborting...")
+      case (Right(_), _: Function) => Left("Running functions inside where clauses is not supported yet. Aborting...")
       case (x@Left(_), _) => x
       case _ => Left("Unsupported WHERE clause format. Aborting...")
     })
@@ -117,10 +110,11 @@ object Filter {
 
   private def addFieldValueToArguments(json: JValue, aggregate: Seq[RunnableArgument], x: Field) =
     aggregate :+ json.getValues(x.value.split("\\.")).flatten match {
-      case Nil | JNull :: Nil => aggregate :+ Coproduct[RunnableArgument](())
-      case JString(s) :: Nil => aggregate :+ Coproduct[RunnableArgument](s)
-      case JNumber(num) :: Nil => aggregate :+ Coproduct[RunnableArgument](num)
-      case JBool(value) :: Nil => aggregate :+ Coproduct[RunnableArgument](value)
+      case Nil | JNull :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](()))
+      case JString(s) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](s))
+      case JNumber(num) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](num))
+      case JBool(value) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](value))
+      case x => Left(s"Scalar or null expected, $x found while parsing the filtering expression. Aborting...")
     }
 
   private def runOperator(operators: Seq[Filterable], aggregate: Seq[RunnableArgument], json: JValue, x: Operator) =
