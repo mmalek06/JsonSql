@@ -28,9 +28,10 @@ object Filter {
     maxPaths match {
       case Right(value) =>
         val partitions = partitionFilters(rpn)
-        val filterFunction = buildFilteringFunction(partitions)
+        val filterableJson = getFilterableJson(json, value)
+        val transformedJson = eradicateNonMatching(partitions, filterableJson)
 
-        Right(filterFunction(json, value))
+        transformedJson
       case Left(error) => Left(error)
     }
   }
@@ -70,30 +71,28 @@ object Filter {
       case _ => aggregate.init :+ (aggregate.last :+ t)
     })
 
-  private def buildFilteringFunction(filterPartitions: Seq[Seq[Token]]) = {
-    val func: (JValue, Seq[String]) => JValue = (json: JValue, rootsPath: Seq[String]) =>
-      (json, rootsPath) match {
-        case (JObject(fields), x :: xs) => JObject(fields.flatMap {
-          case f if f.name == x => Some(JField(f.name, func(f, xs)))
-          case _ => None
-        })
-        case (JArray(arr), path) => JArray(arr.map(func(_, path)))
-        case (filterableJson, Nil) =>
-          filterPartitions.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((maybeAggregate, partition) => (maybeAggregate, partition) match {
-            case (Right(x :: y :: _), And :: Nil) => runConjunction(x, y, _ && _)
-            case (Right(x :: y :: _), Or :: Nil) => runConjunction(x, y, _ || _)
-            case (Right(_), p) => getCurrentArguments(filterableJson, p)
-            case (Left(x), _) => Left(x)
-          }) match {
-            case Right(x :: Nil) =>
-              if (x.fold(RunnableArgumentToBoolean).getOrElse(false)) filterableJson
-              else JNull
-            case _ => JNull
-          }
-      }
+  private def getFilterableJson(json: JValue, rootsPath: Seq[String]): JValue =
+    (json, rootsPath) match {
+      case (JObject(fields), x :: xs) => JObject(fields.flatMap {
+        case f if f.name == x => Some(JField(f.name, getFilterableJson(f, xs)))
+        case _ => None
+      })
+      case (JArray(arr), path) => JArray(arr.map(getFilterableJson(_, path)))
+      case (x, Nil) => x
+    }
 
-    func
-  }
+  private def eradicateNonMatching(filterPartitions: Seq[Seq[Token]], filterableJson: JValue) =
+    filterPartitions.foldLeft(Right(Seq.empty[RunnableArgument]).withLeft[String])((maybeAggregate, partition) => (maybeAggregate, partition) match {
+      case (Right(x :: y :: _), And :: Nil) => runConjunction(x, y, _ && _)
+      case (Right(x :: y :: _), Or :: Nil) => runConjunction(x, y, _ || _)
+      case (Right(_), p) => flattenArguments(filterableJson, p)
+      case (Left(x), _) => Left(x)
+    }) match {
+      case Right(x :: Nil) =>
+        if (x.fold(RunnableArgumentToBoolean).getOrElse(false)) Right(filterableJson)
+        else Right(JNull)
+      case Left(error) => Left(error)
+    }
 
   private def runConjunction(x: RunnableArgument, y: RunnableArgument, op: (Boolean, Boolean) => Boolean) =
     (for {
@@ -104,7 +103,7 @@ object Filter {
       case Some(value) => Right(Seq(Coproduct[RunnableArgument](value)))
     }
 
-  private def getCurrentArguments(json: JValue, partition: Seq[Token]) = {
+  private def flattenArguments(json: JValue, partition: Seq[Token]) = {
     val seed = Right(Seq.empty[RunnableArgument]).withLeft[String]
     val currentArgs = partition.foldLeft(seed)((innerAggregate, t) => (innerAggregate, t) match {
       case (Right(aggregate), x: Constant) => Right(addConstantToArguments(aggregate, x))
@@ -119,7 +118,7 @@ object Filter {
   }
 
   private def addFieldValueToArguments(json: JValue, aggregate: Seq[RunnableArgument], x: Field) =
-    aggregate :+ json.getValues(x.value.split("\\.")).flatten match {
+    json.getValues(x.value.split("\\.")).flatten match {
       case Nil | JNull :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](()))
       case JString(s) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](s))
       case JNumber(num) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](num))

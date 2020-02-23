@@ -19,7 +19,7 @@ class EqualOperator extends Filterable {
     else if (args.forall(_.fold(IsString))) selectable.runStrings(args).exists(_._1.fold(RunnableArgumentToBoolean).get)
     else if (args.forall(_.fold(IsBoolean))) selectable.runBools(args).exists(_._1.fold(RunnableArgumentToBoolean).get)
     //else if (args.exists(_.fold(IsField))) (runFields(args, json), 2, json)
-    else false
+    else true
   }
 
 //  private def runFields(args: Seq[RunnableArgument], json: JValue, fieldMappedJsonVersions: Map[String, JValue]) = {
