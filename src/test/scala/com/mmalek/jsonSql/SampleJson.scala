@@ -24,8 +24,8 @@ object SampleJson {
                   "fullname":"Jack Gibson",
                   "isEmployee":true,
                   "address":{
-                      "street": "Obrońców Wybrzeża",
-                      "city": "Gdańsk"
+                      "street": "Street2",
+                      "city": "City1"
                   }
               },
               {
@@ -36,8 +36,8 @@ object SampleJson {
                   "fullname":"Jean Grant",
                   "isEmployee":true,
                   "address":{
-                      "street": "Irydowa",
-                      "city": "Gdynia"
+                      "street": "Street2",
+                      "city": "City2"
                   }
               },
               {
@@ -65,8 +65,8 @@ object SampleJson {
                   "fullname":"Karen Grimes",
                   "isEmployee":true,
                   "address": {
-                      "street": "Obrońców Wybrzeża",
-                      "city": "Gdańsk"
+                      "street": "Street3",
+                      "city": "City1"
                   }
               },
               {
@@ -77,8 +77,8 @@ object SampleJson {
                   "fullname":"Jose Wolf",
                   "isEmployee":true,
                   "address":{
-                      "street": "Irydowa",
-                      "city": "Gdynia"
+                      "street": "Street3",
+                      "city": "City1"
                   }
               },
               {
@@ -89,8 +89,8 @@ object SampleJson {
                   "fullname":"Hannah Teague",
                   "isEmployee":true,
                   "address":{
-                      "street": "Irydowa",
-                      "city": "Gdynia"
+                      "street": "Street2",
+                      "city": "City2"
                   }
               },
               {
@@ -101,8 +101,8 @@ object SampleJson {
                   "fullname":"Leo Locklear",
                   "isEmployee":false,
                   "address":{
-                      "street": "Irydowa",
-                      "city": "Gdynia"
+                      "street": "Street1",
+                      "city": "City1"
                   }
               }
           ]
@@ -118,8 +118,8 @@ object SampleJson {
           "fullname":"Raymond Mann",
           "isEmployee":true,
           "address":{
-              "street": "Obrońców Wybrzeża",
-              "city": "Gdańsk"
+              "street": "Street1",
+              "city": "City1"
           }
       }
       """.stripMargin
