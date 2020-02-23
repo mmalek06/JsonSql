@@ -52,10 +52,10 @@ object Tokenizer {
       case (_, ReadDelete) => Some(Right(Delete))
       case (_, ReadAs) => Some(Right(As))
       case (value, ReadAsValue) => Some(Right(FieldAlias(cleanValue(value))))
-      case (value, ReadFunction) => Some(getFunction(removeBrackets(value)))
-      case (value, ReadField) => Some(Right(Field(removeBrackets(cleanValue(value)))))
-      case (value, ReadConstant) => Some(Right(Constant(removeBrackets(cleanValue(value)))))
-      case (value, ReadOperator) => Some(Right(Operator(removeBrackets(cleanValue(value)))))
+      case (value, ReadFunction) => Some(getFunction(removeSurroundingChars(value, '(', ')')))
+      case (value, ReadField) => Some(Right(Field(removeSurroundingChars(cleanValue(value), '(', ')'))))
+      case (value, ReadConstant) => Some(Right(Constant(removeSurroundingChars(removeSurroundingChars(cleanValue(value), '(', ')'), '\'', '\''))))
+      case (value, ReadOperator) => Some(Right(Operator(removeSurroundingChars(cleanValue(value), '(', ')'))))
       case (_, ReadFrom) => Some(Right(From))
       case (_, ReadWhere) => Some(Right(Where))
       case (value, ReadConjunction) => Some(getConjunction(value))
@@ -85,12 +85,12 @@ object Tokenizer {
       case _ => Left("What kind of bracket is that?!")
     }
 
-  private def removeBrackets(value: String): String = {
+  private def removeSurroundingChars(value: String, ch1: Char, ch2: Char): String = {
     val step1 =
-      if (value(0) == '(') value.substring(1)
+      if (value(0) == ch1) value.substring(1)
       else value
     val step2 =
-      if (step1.last == ')') step1.substring(0, step1.length - 1)
+      if (step1.last == ch2) step1.substring(0, step1.length - 1)
       else step1
 
     step2

@@ -1,13 +1,11 @@
 package com.mmalek.jsonSql.execution
 
 import cats.implicits._
-import cats.syntax.either._
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnLogicalConverter
 import com.mmalek.jsonSql.execution.runnables.Folders.RunnableArgumentToBoolean
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.filterables.Filterable
 import com.mmalek.jsonSql.execution.runnables.filterables.operators.EqualOperator
-import com.mmalek.jsonSql.execution.runnables.selectables.functions.AvgFunction
 import com.mmalek.jsonSql.extensions.JValueOps._
 import com.mmalek.jsonSql.jsonParsing.dataStructures._
 import com.mmalek.jsonSql.sqlParsing.Token
@@ -20,8 +18,6 @@ object Filter {
   private val conjunctions = Set[Token](Or, And)
   private val operators = Seq(
     new EqualOperator)
-  private val functions = Seq(
-    new AvgFunction)
 
   def apply(filters: Seq[Token], json: JValue): Either[String, JValue] = {
     val rpn = Infix2RpnLogicalConverter.convert(filters)
