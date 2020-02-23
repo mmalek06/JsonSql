@@ -4,8 +4,8 @@ import com.mmalek.jsonSql.execution.addConstantToArguments
 import com.mmalek.jsonSql.execution.rpn.Infix2RpnArithmeticConverter
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.selectables.Selectable
-import com.mmalek.jsonSql.execution.runnables.selectables.functions.AvgFunction
-import com.mmalek.jsonSql.execution.runnables.selectables.operators.AddOperator
+import com.mmalek.jsonSql.execution.runnables.selectables.functions._
+import com.mmalek.jsonSql.execution.runnables.selectables.operators._
 import com.mmalek.jsonSql.extensions.StringOps._
 import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
 import com.mmalek.jsonSql.sqlParsing.Token
@@ -14,7 +14,8 @@ import shapeless.{Coproduct, Inl, Inr}
 
 object FoldingStrategy {
   private val operators = Seq(
-    new AddOperator)
+    new AddOperator,
+    new MultiplyOperator)
   private val functions = Seq(
     new AvgFunction)
 
@@ -58,6 +59,7 @@ object FoldingStrategy {
         case (_: FieldAlias, _: Field) => nextAggregate(aggregate, token)
         case (_: FieldAlias, _: Function) => nextAggregate(aggregate, token)
         case (_: FieldAlias, _: Constant) => nextAggregate(aggregate, token)
+        case (_: FieldAlias, _: Bracket) => nextAggregate(aggregate, token)
         case (_: Field, _: Field) => nextAggregate(aggregate, token)
         case (_: Field, Function(_)) => nextAggregate(aggregate, token)
         case (_, As) => nextAggregate(aggregate, token)

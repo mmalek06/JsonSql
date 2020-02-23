@@ -9,7 +9,7 @@ object App {
 //        WHERE "items.address.city" != 'Gdańsk' OR "items.isEmployee" = false
 //        """
       s"""
-        SELECT "items.id" AS "id"
+        SELECT "items.id" AS "id", AVG("items.age") AS "itemsage", AVG("items.id") AS "itemsid", (2 + 3) * (4 + 1) AS "something"
         FROM ##json##
         WHERE "items.age" = 15 AND "items.address.city" = 'Gdańsk' OR "items.isEmployee" = false OR "items.age" = "items.id"
         """

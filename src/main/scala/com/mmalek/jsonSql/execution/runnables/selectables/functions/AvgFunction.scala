@@ -4,7 +4,7 @@ import com.mmalek.jsonSql.execution.runnables.Folders.{IsField, RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.Types.RunnableArgument
 import com.mmalek.jsonSql.execution.runnables.selectables.Selectable
 import com.mmalek.jsonSql.extensions.JValueOps._
-import com.mmalek.jsonSql.jsonParsing.dataStructures.{JNumber, JValue}
+import com.mmalek.jsonSql.jsonParsing.dataStructures.{JNull, JNumber, JValue}
 import shapeless.Coproduct
 
 class AvgFunction extends Selectable {
@@ -33,7 +33,7 @@ class AvgFunction extends Selectable {
 
   private def hasInvalidValues(values: Seq[Option[JValue]]) =
     values.exists {
-      case Some(JNumber(_)) | None => false
+      case Some(JNumber(_) | JNull) | None => false
       case _ => true
     }
 }

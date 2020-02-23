@@ -2,7 +2,7 @@ package com.mmalek.jsonSql.execution.selection
 
 import com.mmalek.jsonSql.extensions.JValueOps._
 import com.mmalek.jsonSql.extensions.StringOps._
-import com.mmalek.jsonSql.jsonParsing.dataStructures.JValue
+import com.mmalek.jsonSql.jsonParsing.dataStructures.{JNull, JValue}
 import com.mmalek.jsonSql.sqlParsing.Token
 import com.mmalek.jsonSql.sqlParsing.Token.{Constant, Field, FieldAlias}
 
@@ -17,7 +17,13 @@ object MappingStrategy {
 
   private def getValues(value: JValue, token: Token) =
     token match {
-      case t: Field => Some(t.value -> value.getValues(t.value.split("\\.")))
+      case t: Field =>
+        val values = value.getValues(t.value.split("\\.")).map {
+          case Some(JNull) => None
+          case x => x
+        }
+
+        Some(t.value -> values)
       case t: Constant => Some(t.value -> Seq(Some(t.value.asJValue)))
       case _ => None
     }
