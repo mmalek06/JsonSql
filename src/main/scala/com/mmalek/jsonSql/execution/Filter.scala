@@ -74,9 +74,10 @@ object Filter {
   private def getFilterableJson(json: JValue, rootsPath: Seq[String]): JValue =
     (json, rootsPath) match {
       case (JObject(fields), x :: xs) => JObject(fields.flatMap {
-        case f if f.name == x => Some(JField(f.name, getFilterableJson(f, xs)))
+        case field if field.name == x => Some(JField(field.name, getFilterableJson(field.value, xs)))
         case _ => None
       })
+      case (JArray(arr), Nil) => JArray(arr.map(getFilterableJson(_, Nil)))
       case (JArray(arr), path) => JArray(arr.map(getFilterableJson(_, path)))
       case (x, Nil) => x
     }
