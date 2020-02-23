@@ -1,4 +1,4 @@
-package com.mmalek.jsonSql.jsonParsing.unitTests
+package com.mmalek.jsonSql
 
 import com.mmalek.jsonSql.jsonParsing.Normalizer
 import org.scalatest.flatspec.AnyFlatSpec

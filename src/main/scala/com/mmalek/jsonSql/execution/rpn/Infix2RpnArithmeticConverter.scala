@@ -33,7 +33,6 @@ object Infix2RpnArithmeticConverter {
   private val operatorsPrecedence = Map("/" -> 5, "*" -> 5, "%" -> 5, "+" -> 4, "-" -> 4, "(" -> 0)
   private val precedence = operatorsPrecedence.combine(functionsPrecedence)
 
-  // TODO: what happens if expression contains too many brackets?
   def convert(eqn: Seq[Token]): Seq[Token] = {
     val queue = mutable.Queue[Token]()
     val operators = mutable.Stack[Token]()

@@ -71,7 +71,7 @@ class StateMachine(val state: State) {
       canReadConstant,
       canReadOperator,
       canReadFrom))
-  private val operators = Set("-", "+", "/", "*", "%", "=", "!", ">", "<", "!=")
+  private val operators = Set("-", "+", "/", "*", "%", "=", "!", ">", "<", "!=", ">=", "<=")
 
   def next(c: Char, sb: StringBuilder, history: Seq[State]): Option[StateMachine] = {
     val trimmedVal = sb.toString.trim
