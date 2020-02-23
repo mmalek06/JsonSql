@@ -14,8 +14,18 @@ import shapeless.{Coproduct, Inl, Inr}
 
 object FoldingStrategy {
   private val operators = Seq(
-    new AddOperator,
-    new MultiplyOperator)
+    new AddNumbersOperator,
+    new AddStringsOperator,
+    new SubtractOperator,
+    new MultiplyOperator,
+    new DivideOperator,
+    new ModOperator,
+    new EqualOperator,
+    new NotEqualOperator,
+    new GreaterThanOperator,
+    new GreaterThanOrEqualOperator,
+    new LesserThanOperator,
+    new LesserThanOrEqualOperator)
   private val functions = Seq(
     new AvgFunction)
 
