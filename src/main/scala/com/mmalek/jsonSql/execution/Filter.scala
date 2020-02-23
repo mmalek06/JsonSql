@@ -122,7 +122,7 @@ object Filter {
       arg1 <- x.fold(RunnableArgumentToBoolean)
       arg2 <- y.fold(RunnableArgumentToBoolean)
     } yield op(arg1, arg2)) match {
-      case None => Left(s"Couldn't calculate boolean result from passed filter expressions. Expressions were: $x, $y. Aborting...")
+      case None => Left(s"Couldn't calculate boolean result from passed filter expressions. Expressions were: $x, $y.")
       case Some(value) => Right(Seq(Coproduct[RunnableArgument](value)))
     }
 
@@ -132,25 +132,22 @@ object Filter {
       case (Right(aggregate), x: Constant) => Right(addConstantToArguments(aggregate, x))
       case (Right(aggregate), x: Field) => addFieldValueToArguments(json, aggregate, x, parentPath)
       case (Right(aggregate), op: Operator) => runOperator(operators, aggregate, json, op)
-      case (Right(_), _: Function) => Left("Running functions inside where clauses is not supported yet. Aborting...")
+      case (Right(_), _: Function) => Left("Running functions inside where clauses is not supported yet.")
       case (x@Left(_), _) => x
-      case _ => Left("Unsupported WHERE clause format. Aborting...")
+      case _ => Left("Unsupported WHERE clause format.")
     })
 
     currentArgs
   }
 
-  private def addFieldValueToArguments(json: JValue, aggregate: Seq[RunnableArgument], x: Field, parentPath: Seq[String]) = {
-    val path = getValidPath(x, parentPath)
-
-    json.getValues(path).flatten match {
+  private def addFieldValueToArguments(json: JValue, aggregate: Seq[RunnableArgument], x: Field, parentPath: Seq[String]) =
+    json.getValues(getValidPath(x, parentPath)).flatten match {
       case Nil | JNull :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](()))
       case JString(s) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](s))
       case JNumber(num) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](num))
       case JBool(value) :: Nil => Right(aggregate :+ Coproduct[RunnableArgument](value))
-      case x => Left(s"Scalar or null expected, $x found while parsing the filtering expression. Aborting...")
+      case x => Left(s"Scalar or null expected, $x found while parsing the filtering expression.")
     }
-  }
 
   private def getValidPath(x: Field, parentPath: Seq[String]) =
     x.value.split("\\.").flatMap(step => if (parentPath.contains(step)) None else Some(step))
@@ -164,5 +161,5 @@ object Filter {
 
         Right(newAggregate)
       })
-      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known filtering operator or the input was in bad format. Aborting..."))
+      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known filtering operator or the input was in bad format."))
 }
