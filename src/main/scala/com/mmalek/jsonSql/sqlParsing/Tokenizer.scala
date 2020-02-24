@@ -54,7 +54,8 @@ object Tokenizer {
       case (value, ReadAsValue) => Some(Right(FieldAlias(cleanValue(value))))
       case (value, ReadFunction) => Some(getFunction(removeSurroundingChars(value, '(', ')')))
       case (value, ReadField) => Some(Right(Field(removeSurroundingChars(cleanValue(value), '(', ')'))))
-      case (value, ReadConstant) => Some(Right(Constant(removeSurroundingChars(removeSurroundingChars(cleanValue(value), '(', ')'), '\'', '\''))))
+      case (value, ReadConstant) => Some(Right(Constant(
+        cleanConstant(removeSurroundingChars(removeSurroundingChars(cleanValue(value), '(', ')'), '\'', '\'')))))
       case (value, ReadOperator) => Some(Right(Operator(removeSurroundingChars(cleanValue(value), '(', ')'))))
       case (_, ReadFrom) => Some(Right(From))
       case (_, ReadWhere) => Some(Right(Where))
@@ -106,6 +107,9 @@ object Tokenizer {
     if (initCleaned.nonEmpty && initCleaned(0) == ',') cleanValue(initCleaned.substring(1))
     else initCleaned
   }
+
+  private def cleanConstant(value: String): String =
+    value.replace("\\'", "'")
 
   private case class ParsingTuple(stateMachine: StateMachine,
                                   tokens: Seq[Token],

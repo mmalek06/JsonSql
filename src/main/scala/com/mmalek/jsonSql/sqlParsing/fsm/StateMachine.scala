@@ -110,10 +110,14 @@ class StateMachine(val state: State) {
   private def canReadField(c: Char, valueSoFar: String, history: Seq[State]) =
     if(valueSoFar.length > 2 && valueSoFar(0) == '"' && valueSoFar.last == '"') Some(ReadField) else None
 
-  private def canReadConstant(c: Char, valueSoFar: String, history: Seq[State]) =
+  private def canReadConstant(c: Char, valueSoFar: String, history: Seq[State]) = {
+    val cleanedValue = valueSoFar.replace("\\'", "'")
+
     if ((valueSoFar.nonEmpty && (valueSoFar.toBooleanOption.isDefined || valueSoFar.forall(_.isDigit)) && (c == ',' || c == ' ' || c == ')')) ||
-        (valueSoFar.length > 2 && (valueSoFar(0) == '\'' && valueSoFar.last == '\''))) Some(ReadConstant)
+        (cleanedValue.length > 2 && (cleanedValue(0) == '\'' && valueSoFar.takeRight(2) != "\\'" && cleanedValue.last == '\'')))
+      Some(ReadConstant)
     else None
+  }
 
   private def canReadOperator(c: Char, valueSoFar: String, history: Seq[State]) =
     if (valueSoFar.nonEmpty && operators.contains(valueSoFar) && !operators.contains(s"${valueSoFar}$c")) Some(ReadOperator) else None

@@ -57,7 +57,7 @@ class SelectionTests extends AnyFlatSpec with Matchers {
 
   it should "select fields properly, despite no-whitespaces formatting" in {
     val json = SampleJson.noWhitespace
-    val query = """SELECT "id", "age", "name", "surname", "fullname", "isEmployee", "address.street", "address.city" FROM ##json## """
+    val query = """SELECT "id", "age", "name", "surname", "fullname", "isEmployee", "address.street", "address.city" FROM ##json##"""
     val Right(result) = runQuery(query, json)
 
     result("id") should be (Seq(Some(JNumber(1))))
@@ -68,5 +68,14 @@ class SelectionTests extends AnyFlatSpec with Matchers {
     result("isEmployee") should be (Seq(Some(JBool(true))))
     result("address.city") should be (Seq(Some(JString("City1"))))
     result("address.street") should be (Seq(Some(JString("Street1"))))
+  }
+
+  it should "select fields properly, despite string constant containing an escape character" in {
+    val json = SampleJson.single
+    val query = """SELECT "id", 'I\'m a constant!' AS "const" FROM ##json##"""
+    val Right(result) = runQuery(query, json)
+
+    result("id") should be (Seq(Some(JNumber(1))))
+    result("const") should be (Seq(Some(JString("I'm a constant!"))))
   }
 }
