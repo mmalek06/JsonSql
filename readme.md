@@ -12,14 +12,14 @@ so far.
 ## Syntax and what to watch out for
 
 In order to be able to parse text documents correctly, some baseline syntax had to be established. When it comes to
-Json itself, it may look however you need, no restrictions here. Though, when it comes to SQL, it needs to abide to
+Json itself, it may look as you like, no restrictions here. Though, when it comes to SQL, it needs to abide to
 certain rules:
 
 * There's one important bit missing in the library, namely: handling the wildcard symbol - * . I plan on
 implementing it, but haven't had time so far. In the time being, you need to always list the fields you're
 interested in explicitly.
 * Fields should always be surrounded by double quotes: "example.field".
-* String constants should always be surrounded by single quotes: 'I\'m a string constant!' (the escape sequence 
+* String constants should always be surrounded by single quotes: 'I\\'m a string constant!' (the escape sequence 
 will be replaced with single quote in the result).
 * \##json## tag is mandatory - that's where the library inserts the parsed json
 * Functions should always be followed by an alias - otherwise the library wouldn't know how to name the resulting 
