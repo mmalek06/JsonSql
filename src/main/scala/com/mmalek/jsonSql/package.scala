@@ -7,7 +7,7 @@ import com.mmalek.jsonSql.sqlParsing.Token._
 import com.mmalek.jsonSql.sqlParsing.{Token, Tokenizer}
 
 package object jsonSql {
-  def runJsonSql(rawSql: String, rawJson: String): Either[String, Map[String, Seq[Option[JValue]]]] = {
+  def runQuery(rawSql: String, rawJson: String): Either[String, Map[String, Seq[Option[JValue]]]] = {
     val json = JsonParser.getJson(rawJson)
     val (tokens, error) = Tokenizer.tokenize(rawSql)
 
@@ -20,13 +20,13 @@ package object jsonSql {
           val actions = getSelectionActions(completeTokens)
 
           actions.from() match {
-            case Some(from) =>
+            case Right(from) =>
               if (completeTokens.contains(Where)) actions.where(from.value) match {
                 case Right(value) => actions.select(value)
                 case Left(error) => Left(error)
               }
               else actions.select(from.value)
-            case _ => Left("Invalid json input. Parsing aborted...")
+            case Left(error) => Left(error)
           }
         } else Right(Map.empty[String, Seq[Option[JValue]]])
     }

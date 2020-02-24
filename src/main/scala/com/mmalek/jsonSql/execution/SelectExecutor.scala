@@ -15,10 +15,10 @@ class SelectExecutor(actions: Map[Token, Seq[Token]]) {
     else MappingStrategy(json, tokens)
   }
 
-  def from(): Option[Json] =
-    actions(From).head match {
-      case token: Json => Some(token)
-      case _ => None
+  def from(): Either[String, Json] =
+    actions.get(From) match {
+      case Some((h: Json) :: _) => Right(h)
+      case _ => Left("FROM statement not present. The cause for this error may be that you forgot to alias function call in preceding SELECT clause.")
     }
 
   def where(json: JValue): Either[String, JValue] =

@@ -168,5 +168,5 @@ object Filter {
 
         Right(newAggregate)
       })
-      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known filtering operator or the input was in bad format."))
+      .getOrElse(Left(s"Couldn't run ${x.value} operator because it is not a known filtering operator or the input was in bad format."))
 }

@@ -15,7 +15,7 @@ abstract class BaseSingularComparisonOperator extends Selectable {
         n1 <- args.head.fold(RunnableArgumentToNumber)
         n2 <- args.last.fold(RunnableArgumentToNumber)
       } yield Coproduct[RunnableArgument](operation(n1, n2))).map(r => (r, 2))
-    else None
+    else Some(Coproduct[RunnableArgument](false), 2)
   }
 
   protected def operation(arg1: BigDecimal, arg2: BigDecimal): Boolean

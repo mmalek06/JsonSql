@@ -118,7 +118,7 @@ object FoldingStrategy {
 
         Right(newAggregate)
       })
-      .getOrElse(Left(s"Couldn't run ${x.value} operator, because it is not a known selection operator or the input was in bad format. Aborting..."))
+      .getOrElse(Left(s"Couldn't run ${x.value} operator because it is not a known selection operator or the input was in bad format. Aborting..."))
 
   private def runFunction(functions: Seq[Selectable], aggregate: Seq[RunnableArgument], json: JValue, x: Function) =
     functions

@@ -1,15 +1,15 @@
 package com.mmalek.jsonSql
 
 object SampleJson {
-  val list =
+  val list: String =
     """
       {
           "items":[
               {
                   "id":1,
                   "address":{
-                      "street": "Obrońców Wybrzeża",
-                      "city": "Gdańsk"
+                      "street": "Street3",
+                      "city": "City2"
                   }
               },
               {
@@ -71,7 +71,7 @@ object SampleJson {
               },
               {
                   "id":8,
-                  "age":24,
+                  "age":19,
                   "name":"Melanie",
                   "surname":"Graves",
                   "fullname":"Jose Wolf",
@@ -105,10 +105,13 @@ object SampleJson {
                       "city": "City1"
                   }
               }
-          ]
+          ],
+          "something": {
+            "what": false
+          }
       }
-      """.stripMargin
-  val single =
+      """
+  val single: String =
     """
       {
           "id":1,
@@ -122,5 +125,12 @@ object SampleJson {
               "city": "City1"
           }
       }
-      """.stripMargin
+      """
+  val noWhitespace: String = """{"id":1,"age":1,"name":"Ralph","surname":"Garcia","fullname":"Raymond Mann","isEmployee":true,"address":{"street": "Street1","city": "City1"}}"""
+  val weird: String =
+    """
+      {
+        "d": "+ - * /"
+      }
+      """
 }
