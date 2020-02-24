@@ -20,15 +20,15 @@ implementing it, but haven't had time so far. In the time being, you need to alw
 interested in explicitly.
 * Fields should always be surrounded by double quotes: "example.field".
 * String constants should always be surrounded by single quotes: 'I\\'m a string constant!' (the escape sequence 
-will be replaced with single quote in the result).
-* \##json## tag is mandatory - that's where the library inserts the parsed json
+will be replaced with a single quote in the result).
+* \##json## tag is mandatory - that's where the library inserts the parsed json.
 * Functions should always be followed by an alias - otherwise the library wouldn't know how to name the resulting 
-column
-* In examples below, you may notice that I'm using ALLCAPS notation for SQL keywords and function names. It's totally
+column.
+* In the examples below, you may notice that I'm using ALLCAPS notation for SQL keywords and function names. It's totally
 optional, however given a string of SQL code, it nicely distinguishes different tags, so I prefer to use them.
 * The library is not performing any kind of json code validation, which means, that for some broken json inputs
 it will not blow up, but for some other it just may. At the same time it makes no promises, that it will produce correct
-result for incorrect json input that it didn't blew up when used on. It's the client's responsibility, to 
+result for incorrect json input that it didn't blew up when used on. It's the client's responsibility to 
 pass it valid json code.
 * The library is performing SQL code validation - to a degree. It mostly relates to the contents of where clauses.
 Check out unit tests and the Filter object definition for more gory details. 
@@ -170,6 +170,12 @@ WHERE ("items.age" > 10 AND "items.age" < 20 AND "items.address.city" = 'City1')
 As you can see, the lib can also handle some basic functions - for now it's only the AVG function, but more 
 will come soon. Please, bear in mind that for now, it can only handle functions in the SELECT clause and putting
 one elsewhere will cause a Left(error) result to be produced.
+
+## Other
+
+It's not clear on first sight, but the library is trying to preserve the shape of the data fed to it. For example,
+if you give it 10 objects, out of which only 5 will satisfy the condition list given in the WHERE clause, 
+it will return 5 None's and 5 Some's filled with values selected.
 
 There are also few more caveats for now, for example the library is not able to handle nested arrays properly, 
 so querying json code like the one below will probably not return anything useful:
