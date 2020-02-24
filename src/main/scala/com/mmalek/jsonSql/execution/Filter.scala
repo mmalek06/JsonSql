@@ -26,7 +26,7 @@ object Filter {
 
   def apply(filters: Seq[Token], json: JValue): Either[String, JValue] = {
     val rpn = Infix2RpnLogicalConverter.convert(filters)
-    val maxPaths = calculateMaxPaths(rpn)
+    val maxPaths = calculateMaxPaths(rpn, json)
 
     maxPaths match {
       case Right(value) =>
@@ -38,7 +38,7 @@ object Filter {
     }
   }
 
-  private def calculateMaxPaths(filters: Seq[Token]) = {
+  private def calculateMaxPaths(filters: Seq[Token], json: JValue) = {
     val groups = filters
       .flatMap {
         case Field(value) if value == "" => None
@@ -49,7 +49,8 @@ object Filter {
 
     if (groups.size > 1) Left("Filtering expressions should all relate to one object group. Check the github docs on how to properly select items from more than one group.")
     else {
-      val sorted = groups.head._2.sortBy(_.length)(Ordering.Int.reverse)
+      // if a path points to a scalar field, the last part of it needs to be discarded
+      val sorted = groups.head._2.map(_.init).sortBy(_.length)(Ordering.Int.reverse)
       val longest = sorted.head
 
       Right(sorted.tail.foldLeft(longest)((maxPath, array) => pickPath(maxPath, array, Nil).toList))
@@ -60,6 +61,7 @@ object Filter {
   private def pickPath(maxPathSoFar: Seq[String], nextParts: Seq[String], calculatedPath: Seq[String]): Seq[String] =
     maxPathSoFar match {
       case Nil => calculatedPath
+      case _ if nextParts.isEmpty => calculatedPath
       case x :: xs =>
         if (nextParts.head != x) calculatedPath
         else pickPath(xs, nextParts.tail, calculatedPath :+ x)

@@ -19,7 +19,7 @@ class InfixConvertersTests extends AnyFlatSpec with Matchers {
     result(2) should be (Operator("+"))
   }
 
-  "Arithmetic converter" should "reorder tokens in complex expression" in {
+  it should "reorder tokens in complex expression" in {
     val tokens = Seq(
       Bracket("("),
       Bracket("("),
@@ -67,7 +67,7 @@ class InfixConvertersTests extends AnyFlatSpec with Matchers {
     result(2) should be (Operator("OR"))
   }
 
-  "Logical converter" should "reorder tokens in complex expression" in {
+  it should "reorder tokens in complex expression" in {
     val tokens = Seq(
       Constant("true"),
       Or,

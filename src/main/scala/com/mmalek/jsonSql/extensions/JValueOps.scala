@@ -1,13 +1,10 @@
 package com.mmalek.jsonSql.extensions
 
-import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JField, JNull, JObject, JValue}
+import com.mmalek.jsonSql.jsonParsing.dataStructures.{JArray, JObject, JValue}
 
 object JValueOps {
   implicit class JValueExtensions(val json: JValue) {
     def getValues(path: Seq[String]): Seq[Option[JValue]] = walk(path, json)
-
-    def filter(f: JValue => Boolean): JValue =
-      ???
 
     private def walk(path: Seq[String], x: JValue): Seq[Option[JValue]] =
       if (path.isEmpty) Seq(None)
@@ -24,22 +21,6 @@ object JValueOps {
           arr.flatMap(v => walk(path.tail, v))
         case _ =>
           Seq(Some(x))
-      }
-
-    private def walkParented(path: Seq[String], x: JValue): JValue =
-      if (path.isEmpty) JNull
-      else x match {
-        case JObject(fields) =>
-          fields.find(_.name == path.head) match {
-            case Some(_) if path.tail.isEmpty => JObject(fields)
-            case Some(field) =>
-              val otherFields = fields.filterNot(_.name == path.head)
-
-              JObject(Seq(JField(field.name, walkParented(path.tail, field.value))) ++ otherFields)
-            case _ => JNull
-          }
-        case JArray(arr) => JArray(arr.map(v => walkParented(path, v)))
-        case _ => x
       }
   }
 }

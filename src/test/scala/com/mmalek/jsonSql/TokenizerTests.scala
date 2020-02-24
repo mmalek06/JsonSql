@@ -24,7 +24,7 @@ class TokenizerTests extends AnyFlatSpec with Matchers {
     tokens(6) should be (Constant("1"))
   }
 
-  "A Tokenizer" should "parse complex input into tokens" in {
+  it should "parse complex input into tokens" in {
     val query =
       """
         SELECT "items.id" AS "id", AVG("items.age") AS "itemsage", AVG("items.id") AS "itemsid", (2 + 3) * (4 + 1) AS "something"

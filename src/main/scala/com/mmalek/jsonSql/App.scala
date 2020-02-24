@@ -11,7 +11,7 @@ object App {
       s"""
         SELECT "items.id" AS "id", AVG("items.age") AS "itemsage", AVG("items.id") AS "itemsid", (2 + 3) * (4 + 1) AS "something"
         FROM ##json##
-        WHERE "items.age" = 15 AND "items.address.city" = 'Gdańsk' OR "items.isEmployee" = false OR "items.age" = "items.id"
+        WHERE "items.id" = 1
         """
 //      WHERE "items.address.city" = 'Gdynia' OR "items.age" = 16
 //      s"""
@@ -21,8 +21,8 @@ object App {
 //        """
     //SELECT (2 + 3) * (4 + 1) AS "avgAge", AVG("items.age"), "items.age", "items.name" AS "name"
     //WHERE AVG("items.age") > 1 AND "items.address.city" != 'Gdańsk' OR "items.isEmployee" = false AND true = true OR true = false
-//    val data = runJsonSql(query, SampleJson.list)
+    //val data = runJsonSql(query, SampleJson11.list)
 //
-//    println("ASDf")
+    println("ASDf")
   }
 }

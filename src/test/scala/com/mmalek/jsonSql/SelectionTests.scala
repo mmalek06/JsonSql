@@ -16,7 +16,7 @@ class SelectionTests extends AnyFlatSpec with Matchers {
     result("fullname") should be (Seq(Some(JString("Raymond Mann"))))
   }
 
-  "JsonSql" should "select fields from nested json object" in {
+  it should "select fields from nested json object" in {
     val json = SampleJson.list
     val query = """
       SELECT "items.id" AS "id", AVG("items.age") AS "avgage", AVG("items.id") AS "avgid", (2 + 3) * (4 + 1) AS "something"
