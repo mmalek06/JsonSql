@@ -27,7 +27,7 @@ column.
 * In the examples below, you may notice that I'm using ALLCAPS notation for SQL keywords and function names. It's totally
 optional, however given a string of SQL code, it nicely distinguishes different tags, so I prefer to use them.
 * The library is not performing any kind of json code validation, which means, that for some broken json inputs
-it will not blow up, but for some other it just may. At the same time it makes no promises, that it will produce correct
+it will not blow up, but for some other it just may. At the same time it makes no promises that it will produce correct
 result for incorrect json input that it didn't blew up when used on. It's the client's responsibility to 
 pass it valid json code.
 * The library is performing SQL code validation - to a degree. It mostly relates to the contents of where clauses.
