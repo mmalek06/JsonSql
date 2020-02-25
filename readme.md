@@ -168,7 +168,7 @@ WHERE ("items.age" > 10 AND "items.age" < 20 AND "items.address.city" = 'City1')
 ```
 
 As you can see, the lib can also handle some basic functions - for now it's only the AVG function, but more 
-will come soon. Please, bear in mind that for now, it can only handle functions in the SELECT clause and putting
+will come soon. Please bear in mind that for now, it can only handle functions in the SELECT clause and putting
 one elsewhere will cause a Left(error) result to be produced.
 
 ## Other
