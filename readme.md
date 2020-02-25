@@ -31,7 +31,7 @@ it will not blow up, but for some other it just may. At the same time it makes n
 result for incorrect json input that it didn't blew up when used on. It's the client's responsibility to 
 pass it valid json code.
 * The library is performing SQL code validation - to a degree. It mostly relates to the contents of where clauses.
-Check out unit tests and the Filter object definition for more gory details. 
+Check out unit tests and the com.mmalek.jsonSql.execution.Filter object definition for more gory details. 
 
 ## Usage
 
@@ -64,7 +64,6 @@ val Right(result) = runQuery("...", json)
 
 result("id") should be (Seq(Some(JNumber(1))))
 result("age") should be (Seq(Some(JNumber(1))))
-result("avgage") should be (Seq(Some(JNumber(1))))
 result("fullname") should be (Seq(Some(JString("Raymond Mann"))))
 ```
 
