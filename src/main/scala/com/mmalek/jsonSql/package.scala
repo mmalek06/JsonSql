@@ -7,7 +7,9 @@ import com.mmalek.jsonSql.sqlParsing.Token._
 import com.mmalek.jsonSql.sqlParsing.{Token, Tokenizer}
 
 package object jsonSql {
-  def runQuery(rawSql: String, rawJson: String): Either[String, Map[String, Seq[Option[JValue]]]] = {
+  type Result = Map[String, Seq[Option[JValue]]]]
+
+  def runQuery(rawSql: String, rawJson: String): Either[String, Result] = {
     val json = JsonParser.getJson(rawJson)
     val (tokens, error) = Tokenizer.tokenize(rawSql)
 
@@ -29,6 +31,13 @@ package object jsonSql {
             case Left(error) => Left(error)
           }
         } else Right(Map.empty[String, Seq[Option[JValue]]])
+    }
+  }
+
+  object implicits {
+    implicit class JsonSql(rawJson: String) {
+      def query(rawSql: String): Either[String, Result] =
+        runQuery(rawSql, rawJson)
     }
   }
 
