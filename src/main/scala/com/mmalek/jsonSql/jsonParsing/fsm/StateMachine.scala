@@ -35,11 +35,15 @@ class StateMachine(val state: State) {
       canReadArrayEndAfterSomeEnd,
       canReadScalarAfterSomeEnd),
     State.ReadArrayEnd -> Seq(
+      canReadObject,
+      canReadArray,
       canReadObjectKeyAfterSomeEnd,
       canReadScalarAfterSomeEnd,
       canReadArrayEndAfterSomeEnd,
       canReadObjectEndAfterSomeEnd
     ))
+  // no double quotes here, as " is a marker for new scalar
+  private val specialChars = (32 to 47).toList ++ (58 to 64).toList ++ (91 to 96).toList ++ (123 to 126).toList
 
   def next(c: Char, sb: StringBuilder, history: Seq[State]): Option[StateMachine] = {
     val transition = transitions(state).foldLeft(Option.empty[State])((aggregate, f) => aggregate match {
@@ -139,7 +143,7 @@ class StateMachine(val state: State) {
     if (c == ']' && isIn(ReadArray, ReadArrayEnd, history)) Some(ReadArrayEnd) else None
 
   private def canReadScalarAfterSomeEnd(c: Char, valueSoFar: String, history: Seq[State]) =
-    if (c != '{' && c != '}' && c != '[' && c != ']' && isIn(ReadArray, ReadArrayEnd, history) && !isIn(ReadObject, ReadObjectEnd, history)) Some(ReadScalar) else None
+    if (!specialChars.contains(c) && isIn(ReadArray, ReadArrayEnd, history) && !isIn(ReadObject, ReadObjectEnd, history)) Some(ReadScalar) else None
 
   private def isIn(openState: State, closeState: State, history: Seq[State]) =
     history.foldLeft((false, 0))((aggregate, state) => {
