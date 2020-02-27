@@ -32,6 +32,7 @@ result for incorrect json input that it didn't blew up when used on. It's the cl
 pass it valid json code.
 * The library is performing SQL code validation - to a degree. It mostly relates to the contents of where clauses.
 Check out unit tests and the com.mmalek.jsonSql.execution.Filter object definition for more gory details. 
+* For now, the library does not support any of: OFFSET/LIMIT, ORDER BY, nor GROUP BY clauses. I have plans to implement them, so stay tuned!
 
 ## Usage
 
