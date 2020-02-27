@@ -80,7 +80,7 @@ class SelectionTests extends AnyFlatSpec with Matchers {
   }
 
   it should "select fields properly from a nested array" in {
-    val json = SampleJson.arrayOfArrays
+    val json = SampleJson.deeplyNestedArrays
     val query = """SELECT "key" FROM ##json##"""
     val Right(result) = runQuery(query, json)
 

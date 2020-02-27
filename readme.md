@@ -177,19 +177,6 @@ It's not clear on first sight, but the library is trying to preserve the shape o
 if you give it 10 objects, out of which only 5 will satisfy the condition list given in the WHERE clause, 
 it will return 5 None's and 5 Some's filled with values selected.
 
-There are also few more caveats for now, for example the library is not able to handle nested arrays properly, 
-so querying json code like the one below will probably not return anything useful:
-
-```json
-[
-  [
-    { "key": 1 },
-    { "key": 2 }
-  ],
-  ...
-]
-```
-
 For more use cases, look into the small test suite I wrote. 
 
 Feel free to put any more issues you find on this github!
