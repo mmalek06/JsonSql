@@ -133,4 +133,23 @@ object SampleJson {
         "d": "+ - * /"
       }
       """
+  val deeplyNestedArrays: String =
+    """
+      [
+        [
+          [
+            [
+              [
+                { "key": 1 },
+                { "key": 2 }
+              ],
+              [
+                { "key": 1 },
+                { "key": 2 }
+              ]
+            ]
+          ]
+        ]
+      ]
+      """.stripMargin
 }

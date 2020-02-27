@@ -78,4 +78,12 @@ class SelectionTests extends AnyFlatSpec with Matchers {
     result("id") should be (Seq(Some(JNumber(1))))
     result("const") should be (Seq(Some(JString("I'm a constant!"))))
   }
+
+  it should "select fields properly from a nested array" in {
+    val json = SampleJson.deeplyNestedArrays
+    val query = """SELECT "key" FROM ##json##"""
+    val Right(result) = runQuery(query, json)
+
+    result("key") should be (Seq(Some(JNumber(1)), Some(JNumber(2)), Some(JNumber(1)), Some(JNumber(2))))
+  }
 }
