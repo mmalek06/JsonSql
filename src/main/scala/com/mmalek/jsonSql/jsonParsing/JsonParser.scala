@@ -46,8 +46,7 @@ object JsonParser {
 
   private def getActionTuple(state: State, sb: StringBuilder, history: Seq[State]) =
     state match {
-      case ReadObjectEnd | ReadArrayEnd if isInKeyNode(history) =>
-        (Navigation.Up2, NoneNode, None)
+      case ReadObjectEnd | ReadArrayEnd if isInKeyNode(history) => (Navigation.Up2, NoneNode, None)
       case ReadObjectEnd | ReadArrayEnd => (Navigation.Up, NoneNode, None)
       case ReadObject => (Navigation.Down, ObjectNode, Some(getObject))
       case ReadObjectKey => (Navigation.Down, KeyNode(sb.toString), Some(getPropertyKey(getCleanedPropertyKey(sb))))
