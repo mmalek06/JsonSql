@@ -16,6 +16,7 @@ class StateMachine(val state: State) {
       canReadBracket,
       canReadFunction,
       canReadField,
+      canReadAllField,
       canReadConstant),
     State.ReadFunction -> Seq(
       canReadBracket,
@@ -83,10 +84,7 @@ class StateMachine(val state: State) {
       case x => x
     })
 
-    transition match {
-      case Some(value) => Some(new StateMachine(value))
-      case _ => None
-    }
+    transition.map(new StateMachine(_))
   }
 
   private def canReadInsert(c: Char, valueSoFar: String, history: Seq[State]) =
@@ -109,6 +107,9 @@ class StateMachine(val state: State) {
 
   private def canReadField(c: Char, valueSoFar: String, history: Seq[State]) =
     if(valueSoFar.length > 2 && valueSoFar(0) == '"' && valueSoFar.last == '"') Some(ReadField) else None
+
+  private def canReadAllField(c: Char, valueSoFar: String, history: Seq[State]) =
+    if (valueSoFar == "*") Some(ReadField) else None
 
   private def canReadConstant(c: Char, valueSoFar: String, history: Seq[State]) = {
     val cleanedValue = valueSoFar.replace("\\'", "'")

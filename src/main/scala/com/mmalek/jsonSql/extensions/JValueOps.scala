@@ -8,6 +8,7 @@ object JValueOps {
 
     private def walk(path: Seq[String], x: JValue): Seq[Option[JValue]] =
       if (path.isEmpty) Seq(None)
+      else if (path.size == 1 && path.head == "*") Seq(Some(x))
       else x match {
         case JObject(fields) =>
           fields.find(_.name == path.head).map(_.value) match {
@@ -15,10 +16,8 @@ object JValueOps {
             case Some(value) => walk(path.tail, value)
             case _ => Seq(None)
           }
-        case JArray(arr) if path.tail.isEmpty =>
-          arr.flatMap(v => walk(path, v))
         case JArray(arr) =>
-          arr.flatMap(v => walk(path.tail, v))
+          arr.flatMap(v => walk(path, v))
         case _ =>
           Seq(Some(x))
       }
