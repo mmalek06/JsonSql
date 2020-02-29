@@ -1,6 +1,7 @@
 package com.mmalek.jsonSql.jsonParsing.dataStructures
 
 import com.mmalek.jsonSql.jsonParsing.Types.CreatorArgument
+import com.mmalek.jsonSql.jsonParsing.dataStructures.NodeKind.ArrayNode
 import shapeless.Coproduct
 
 import scala.annotation.tailrec
@@ -8,7 +9,7 @@ import scala.annotation.tailrec
 sealed trait FunctionsTree {
   def addChild(childKind: NodeKind,
                childValue: CreatorArgument => JValue,
-               parentPath: Seq[Node] = Nil): Node
+               parentPath: Seq[Node]): Node
   def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node]
   def execute: JValue
 }
@@ -20,13 +21,13 @@ object FunctionsTree {
 case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[Node]) extends FunctionsTree {
   def addChild(childKind: NodeKind,
                childValue: CreatorArgument => JValue,
-               parentPath: Seq[Node] = Nil): Node = parentPath match {
+               parentPath: Seq[Node]): Node = parentPath match {
     case Nil => createTree(childKind, childValue)
     case parents => recreateTree(childKind, childValue, parents)
   }
 
   @tailrec
-  final def getRightmostChildPath(parents: Seq[Node] = Nil): Seq[Node] =
+  final def getRightmostChildPath(parents: Seq[Node]): Seq[Node] =
     children match {
       case Nil => parents :+ this
       case elements => elements.last.getRightmostChildPath(parents :+ this)
@@ -49,13 +50,26 @@ case class Node(kind: NodeKind, value: CreatorArgument => JValue, children: Seq[
 
   private def getArgument(values: Seq[JValue]) =
     values match {
+      case JNull :: Nil => Coproduct[CreatorArgument](())
       case (x: JString) :: Nil => Coproduct[CreatorArgument](x)
       case (x: JNumber) :: Nil => Coproduct[CreatorArgument](x)
       case (x: JBool) :: Nil => Coproduct[CreatorArgument](x)
-      case (x: JObject) :: Nil => Coproduct[CreatorArgument](x)
-      case (x: JArray) :: Nil => Coproduct[CreatorArgument](x)
-      case (_: JField) :: (_: Seq[JField]) => Coproduct[CreatorArgument](JObject(values.asInstanceOf[Seq[JField]]))
-      case (_: JValue) :: (_: Seq[JValue]) => Coproduct[CreatorArgument](JArray(values))
+      case (x: JObject) :: Nil => getArgumentOnObject(x)
+      case (x: JArray) :: Nil => getArgumentOnArray(x)
+      case (_: JField) :: _ => Coproduct[CreatorArgument](JObject(values.asInstanceOf[Seq[JField]]))
+      case (_: JValue) :: _ => Coproduct[CreatorArgument](JArray(values))
+    }
+
+  private def getArgumentOnObject(x: JObject) =
+    kind match {
+      case ArrayNode => Coproduct[CreatorArgument](JArray(Seq(x)))
+      case _ => Coproduct[CreatorArgument](x)
+    }
+
+  private def getArgumentOnArray(x: JArray) =
+    kind match {
+      case ArrayNode => Coproduct[CreatorArgument](JArray(Seq(x)))
+      case _ => Coproduct[CreatorArgument](x)
     }
 
   private def createTree(childKind: NodeKind, childValue: CreatorArgument => JValue) =

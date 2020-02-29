@@ -12,7 +12,7 @@ case class JField(name: String, value: JValue) extends JValue
 
 case class JObject(fields: Seq[JField]) extends JValue {
   override def equals(that: Any): Boolean = that match {
-    case o: JObject => Set(fields.toArray: _*) == Set(o.fields.toArray: _*)
+    case o: JObject => Set(fields: _*) == Set(o.fields: _*)
     case _ => false
   }
 }

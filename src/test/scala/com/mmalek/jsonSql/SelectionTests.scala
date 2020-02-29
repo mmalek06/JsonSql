@@ -48,26 +48,15 @@ class SelectionTests extends AnyFlatSpec with Matchers {
   }
 
   it should "select fields properly, despite input json weirdness" in {
-    val json = SampleJson.weird
+    val json = """
+      {
+        "d": "+ - * /"
+      }
+      """
     val query = """SELECT "d" FROM ##json##"""
     val Right(result) = runQuery(query, json)
 
     result("d") should be (Seq(Some(JString("+ - * /"))))
-  }
-
-  it should "select fields properly, despite no-whitespaces formatting" in {
-    val json = SampleJson.noWhitespace
-    val query = """SELECT "id", "age", "name", "surname", "fullname", "isEmployee", "address.street", "address.city" FROM ##json##"""
-    val Right(result) = runQuery(query, json)
-
-    result("id") should be (Seq(Some(JNumber(1))))
-    result("age") should be (Seq(Some(JNumber(1))))
-    result("name") should be (Seq(Some(JString("Ralph"))))
-    result("surname") should be (Seq(Some(JString("Garcia"))))
-    result("fullname") should be (Seq(Some(JString("Raymond Mann"))))
-    result("isEmployee") should be (Seq(Some(JBool(true))))
-    result("address.city") should be (Seq(Some(JString("City1"))))
-    result("address.street") should be (Seq(Some(JString("Street1"))))
   }
 
   it should "select fields properly, despite string constant containing an escape character" in {
@@ -80,7 +69,24 @@ class SelectionTests extends AnyFlatSpec with Matchers {
   }
 
   it should "select fields properly from a nested array" in {
-    val json = SampleJson.deeplyNestedArrays
+    val json = """
+      [
+        [
+          [
+            [
+              [
+                { "key": 1 },
+                { "key": 2 }
+              ],
+              [
+                { "key": 1 },
+                { "key": 2 }
+              ]
+            ]
+          ]
+        ]
+      ]
+      """
     val query = """SELECT "key" FROM ##json##"""
     val Right(result) = runQuery(query, json)
 
