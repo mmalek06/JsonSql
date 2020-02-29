@@ -126,30 +126,5 @@ object SampleJson {
           }
       }
       """
-  val noWhitespace: String = """{"id":1,"age":1,"name":"Ralph","surname":"Garcia","fullname":"Raymond Mann","isEmployee":true,"address":{"street": "Street1","city": "City1"}}"""
-  val weird: String =
-    """
-      {
-        "d": "+ - * /"
-      }
-      """
-  val deeplyNestedArrays: String =
-    """
-      [
-        [
-          [
-            [
-              [
-                { "key": 1 },
-                { "key": 2 }
-              ],
-              [
-                { "key": 1 },
-                { "key": 2 }
-              ]
-            ]
-          ]
-        ]
-      ]
-      """.stripMargin
+
 }

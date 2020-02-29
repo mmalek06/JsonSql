@@ -129,7 +129,7 @@ class StateMachine(val state: State) {
     if (valueSoFar.toLowerCase == "where") Some(ReadWhere) else None
 
   private def canReadConjunction(c: Char, valueSoFar: String, history: Seq[State]) =
-    if (valueSoFar.toLowerCase == "and" | valueSoFar.toLowerCase == "or") Some(ReadConjunction) else None
+    if (valueSoFar.toLowerCase == "and" || valueSoFar.toLowerCase == "or") Some(ReadConjunction) else None
 
   private def canReadBracket(c: Char, valueSoFar: String, history: Seq[State]) =
     if (valueSoFar.length == 1 && (valueSoFar(0) == '(' || valueSoFar(0) == ')')) Some(ReadBracket) else None
