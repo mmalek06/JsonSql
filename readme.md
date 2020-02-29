@@ -15,14 +15,11 @@ In order to be able to parse text documents correctly, some baseline syntax had 
 Json itself, it may look as you like, no restrictions here. Though, when it comes to SQL, it needs to abide to
 certain rules:
 
-* There's one important bit missing in the library, namely: handling the wildcard symbol - * . I plan on
-implementing it, but haven't had time so far. In the time being, you need to always list the fields you're
-interested in explicitly.
 * Fields should always be surrounded by double quotes: "example.field".
 * String constants should always be surrounded by single quotes: 'I\\'m a string constant!' (the escape sequence 
 will be replaced with a single quote in the result).
 * \##json## tag is mandatory - that's where the library inserts the parsed json.
-* Functions should always be followed by an alias - otherwise the library wouldn't know how to name the resulting 
+* Functions should always be followed by an alias - otherwise the library won't know how to name the resulting 
 column.
 * In the examples below, you may notice that I'm using ALLCAPS notation for SQL keywords and function names. It's totally
 optional, however given a string of SQL code, it nicely distinguishes different tags, so I prefer to use them.
@@ -170,6 +167,28 @@ WHERE ("items.age" > 10 AND "items.age" < 20 AND "items.address.city" = 'City1')
 As you can see, the lib can also handle some basic functions - for now it's only the AVG function, but more 
 will come soon. Please bear in mind that for now, it can only handle functions in the SELECT clause and putting
 one elsewhere will cause a Left(error) result to be produced.
+
+You can use the wildcard symbol (*) as well, for example:
+
+```sql
+SELECT "items.id" AS "id", "items.address.*" AS "address"
+FROM ##json##
+WHERE "items.age" = 15
+```
+
+will give you:
+
+```scala
+result("id") should be (Seq(None, None, None, None, None, None, Some(JNumber(7)), None, None, None))
+result("address") should be (
+  Seq(None, None, None, None, None, None,
+    Some(
+      JObject(
+        Seq(
+          JField("street", JString("Street3")),
+          JField("city", JString("City1"))))),
+    None, None, None))
+```
 
 ## Other
 
