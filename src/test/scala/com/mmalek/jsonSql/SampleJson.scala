@@ -126,5 +126,4 @@ object SampleJson {
           }
       }
       """
-
 }
