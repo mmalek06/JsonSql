@@ -194,7 +194,7 @@ result("address") should be (
 
 It's not clear on first sight, but the library is trying to preserve the shape of the data fed to it. For example,
 if you give it 10 objects, out of which only 5 will satisfy the condition list given in the WHERE clause, 
-it will return 5 None's and 5 Some's filled with values selected.
+it will return 5 None's and 5 Some's filled with values selected - that's by design, but I've added a task to the issues list, to also create a functionality that would return only Some's.
 
 For more use cases, look into the small test suite I wrote. 
 
